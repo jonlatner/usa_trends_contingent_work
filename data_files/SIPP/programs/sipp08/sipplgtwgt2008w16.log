@@ -1,0 +1,733 @@
+---------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/jonathanlatner/Desktop/SIPP/programs/sipp08/sipplgtwgt2008w16.log
+  log type:  text
+ opened on:  21 Mar 2022, 12:11:58
+
+. 
+. **------------------------------------------------;
+. 
+. **  This program reads the 2008 SIPP16 Core Longitudnal Data File 
+. **  Note:  This program is distributed under the GNU GPL. See end of
+. **  this file and http://www.gnu.org/licenses/ for details.
+. **  by Jean Roth Mon Aug 10 13:44:43 EDT 2015
+. **  Please report errors to jroth@nber.org
+. **  run with do sipplgtwgt2008w16
+. 
+. **-----------------------------------------------;
+. 
+. ** The following line should contain
+. **   the complete path and name of the raw data file.
+. **   On a PC, use backslashes in paths as in C:\  
+. 
+. local dat_name "/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp08/lgtwgt2008w16.dat"
+
+. 
+. ** The following line should contain the path to your output '.dta' file 
+. 
+. local dta_name "/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp08/lgtwgt2008w16.dta"
+
+. 
+. ** The following line should contain the path to the data dictionary file 
+. 
+. local dct_name "/Users/jonathanlatner/Desktop/SIPP/programs/sipp08/sipplgtwgt2008w16.dct"
+
+. 
+. ** The line below does NOT need to be changed 
+. 
+. quietly infile using "`dct_name'", using("`dat_name'") clear
+
+. 
+. **  Decimal places have been made explict in the dictionary file.
+. **  Stata resolves a missing value of -1 / # of decimal places as a missing value.
+. 
+. **Everything below this point, aside from the final save, are value labels
+. 
+. #delimit ;
+delimiter now ;
+. ;
+. label values spanel   spanel;
+
+.  label define spanel  
+>         2008        "Panel Year"                    
+> ;
+
+. #delimit cr
+delimiter now cr
+. desc,short
+
+Contains data
+  obs:        98,721                          
+ vars:            14                          
+ size:    10,464,426                          
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+. 
+. sort ssuid epppnum 
+
+. saveold `dta_name' , replace
+(saving in Stata 13 format)
+(FYI, saveold has options version(12) and version(11) that write files in older Stata formats)
+(note: file /Users/jonathanlatner/Desktop/SIPP/rawdata/sipp08/lgtwgt2008w16.dta not found)
+file /Users/jonathanlatner/Desktop/SIPP/rawdata/sipp08/lgtwgt2008w16.dta saved
+
+. 
+. 
+. 
+. ** Copyright 2015 shared by the National Bureau of Economic Research and Jean Roth ;
+. 
+. ** National Bureau of Economic Research. ;
+. ** 1050 Massachusetts Avenue ;
+. ** Cambridge, MA 02138 ;
+. ** jroth@nber.org ;
+. 
+. ** This program and all programs referenced in it are free software. You ;
+. ** can redistribute the program or modify it under the terms of the GNU ;
+. ** General Public License as published by the Free Software Foundation; 
+. ** either version 2 of the License, or (at your option) any later version. ;
+. 
+. ** This program is distributed in the hope that it will be useful, ;
+. ** but WITHOUT ANY WARRANTY, without even the implied warranty of ;
+. ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the ;
+. ** GNU General Public License for more details. ;
+. 
+. ** You should have received a copy of the GNU General Public License ;
+. ** along with this program, if not, write to the Free Software ;
+. ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA. ;
+. 
+end of do-file
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp08
+(note: file sipp08lwt.dta not found)
+file sipp08lwt.dta saved
+
+. 
+end of do-file
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD20218.000000"
+
+. set more off
+
+. global rootdir /Users/jonathanlatner/Desktop/SIPP
+
+. global output $rootdir/rawdata/sipp08
+
+. 
+. cd $output
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp08
+
+. 
+. use sipp08w1.dta, clear
+
+. 
+end of do-file
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD20218.000000"
+
+. set more off
+
+. global rootdir /Users/jonathanlatner/Desktop/SIPP
+
+. global output $rootdir/rawdata/sipp08
+
+. 
+. cd $output
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp08
+
+. 
+. use sipp08w1.dta, clear
+
+. 
+. foreach i of num 1/16 {         
+  2.         use sipp08w`i'.dta, clear
+  3. 
+.         
+.         /* This code will drop the first three months of each wave, thus
+>         generating a SIPP dataset by person-wave, rather than by person-month. */
+.         sort id wave srefmon
+  4.         egen seam_ = max(srefmon), by(id wave)
+  5.         sort id wave
+  6.         quietly by id wave: gen byte seam = seam_==srefmon
+  7.         label var seam "last month of wave"
+  8.         drop seam_
+  9.         keep if seam==1
+ 10.         
+.         keep if srefmon == 4
+ 11.         
+.         rename tage age
+ 12.         rename esex sex
+ 13.         rename tfipsst state
+ 14.         rename wpfinwgt weight /* person weight */
+ 15. 
+.         *Employment
+.         rename rmesr esr /* employment status */
+ 16.         rename epdjbthn paid_job /* paid job during reference period */
+ 17.         rename emoonlit moonlit /* moonlighting - income from additional work */
+ 18.         gen emp = 0 if esr>=1 & esr<=7
+ 19.         replace emp = 1 if esr>=1 & esr<=5
+ 20.         label var emp "Employed at least one week in a month"
+ 21.         label define emp 1 "Employed at least one week in a month" 0 "In LF, not employed all month"
+ 22. 
+.         gen temp_agency = 0 /* recode industry (ejbind), either first or second job */
+ 23.         replace temp_agency = 1 if ejbind1 == 7580 | ejbind2 == 7580
+ 24.         
+.         rename ecflag contingent /* LF: Flag indicating other-work-arrange */
+ 25. 
+.         gen temp_work = 0
+ 26.         replace temp_work = 1 if temp_agency == 1 | contingent == 1 | moonlit == 1
+ 27. 
+.         *Education
+.         gen educ = 1 if eeducate<=38 & eeducate~=.
+ 28.         replace educ = 2 if eeducate==39
+ 29.         replace educ = 3 if eeducate>=40 & eeducate<=43
+ 30.         replace educ = 4 if eeducate==44
+ 31.         replace educ = 5 if eeducate>=45 & eeducate<=48
+ 32.         drop eeducate
+ 33.         label define educ ///
+>         1 "less than high school" ///
+>         2 "high school grad" ///
+>         3 "some college" ///
+>         4 "college degree" ///
+>         5 "post-college"
+ 34.         label values educ educ
+ 35. 
+.         *Race/ethnicity
+.         rename erace race1
+ 36.         rename eorigin ethnic
+ 37.         gen race = 1 if race1==1 & (ethnic<20 | ethnic>28)
+ 38.         replace race = 2 if race1==2 & (ethnic<20 | ethnic>28)
+ 39.         replace race = 3 if (ethnic>=20 & ethnic<=28)
+ 40.         replace race = 4 if race1>2 & (ethnic<20 | ethnic>28) & race1~=.
+ 41. 
+.         label define race_cepr 1 "White" 2 "Black" 3 "Hispanic" 4 "Other"
+ 42.         label values race race_cepr
+ 43. 
+.         keep id wave srefmon ssuid epppnum state age sex educ emp contingent temp_agency weight paid_job moonlit temp_wor
+> k
+ 44.         
+.         sort id wave srefmon
+ 45.         save sipp08w`i'_small.dta, replace
+ 46. }
+(316,248 observations deleted)
+(0 observations deleted)
+(51,321 missing values generated)
+(51,064 real changes made)
+(543 real changes made)
+(2,768 real changes made)
+(68,014 missing values generated)
+(20,554 real changes made)
+(27,225 real changes made)
+(13,094 real changes made)
+(7,141 real changes made)
+(22,960 missing values generated)
+(13,688 real changes made)
+(0 real changes made)
+(9,272 real changes made)
+(note: file sipp08w1_small.dta not found)
+file sipp08w1_small.dta saved
+(293,232 observations deleted)
+(966 observations deleted)
+(48,518 missing values generated)
+(46,604 real changes made)
+(470 real changes made)
+(1,668 real changes made)
+(64,620 missing values generated)
+(20,535 real changes made)
+(25,162 real changes made)
+(12,242 real changes made)
+(6,681 real changes made)
+(20,825 missing values generated)
+(12,349 real changes made)
+(0 real changes made)
+(8,476 real changes made)
+(note: file sipp08w2_small.dta not found)
+file sipp08w2_small.dta saved
+(283,872 observations deleted)
+(1,076 observations deleted)
+(46,722 missing values generated)
+(44,764 real changes made)
+(350 real changes made)
+(1,291 real changes made)
+(62,073 missing values generated)
+(19,413 real changes made)
+(24,269 real changes made)
+(11,895 real changes made)
+(6,496 real changes made)
+(19,892 missing values generated)
+(11,937 real changes made)
+(0 real changes made)
+(7,955 real changes made)
+(note: file sipp08w3_small.dta not found)
+file sipp08w3_small.dta saved
+(271,867 observations deleted)
+(1,199 observations deleted)
+(45,154 missing values generated)
+(42,300 real changes made)
+(350 real changes made)
+(1,236 real changes made)
+(59,827 missing values generated)
+(18,983 real changes made)
+(23,147 real changes made)
+(11,448 real changes made)
+(6,249 real changes made)
+(18,997 missing values generated)
+(11,370 real changes made)
+(0 real changes made)
+(7,627 real changes made)
+(note: file sipp08w4_small.dta not found)
+file sipp08w4_small.dta saved
+(269,945 observations deleted)
+(1,137 observations deleted)
+(45,345 missing values generated)
+(41,120 real changes made)
+(376 real changes made)
+(1,048 real changes made)
+(59,368 missing values generated)
+(18,703 real changes made)
+(23,131 real changes made)
+(11,350 real changes made)
+(6,184 real changes made)
+(19,000 missing values generated)
+(11,415 real changes made)
+(0 real changes made)
+(7,585 real changes made)
+(note: file sipp08w5_small.dta not found)
+file sipp08w5_small.dta saved
+(263,142 observations deleted)
+(1,163 observations deleted)
+(44,143 missing values generated)
+(40,318 real changes made)
+(390 real changes made)
+(1,073 real changes made)
+(58,362 missing values generated)
+(18,647 real changes made)
+(22,521 real changes made)
+(11,080 real changes made)
+(6,114 real changes made)
+(18,721 missing values generated)
+(11,320 real changes made)
+(0 real changes made)
+(7,401 real changes made)
+(note: file sipp08w6_small.dta not found)
+file sipp08w6_small.dta saved
+(255,019 observations deleted)
+(1,152 observations deleted)
+(43,115 missing values generated)
+(38,886 real changes made)
+(421 real changes made)
+(1,092 real changes made)
+(56,823 missing values generated)
+(18,189 real changes made)
+(21,927 real changes made)
+(10,766 real changes made)
+(5,941 real changes made)
+(17,966 missing values generated)
+(10,833 real changes made)
+(0 real changes made)
+(7,133 real changes made)
+(note: file sipp08w7_small.dta not found)
+file sipp08w7_small.dta saved
+(252,324 observations deleted)
+(1,042 observations deleted)
+(43,169 missing values generated)
+(37,913 real changes made)
+(408 real changes made)
+(1,000 real changes made)
+(56,023 missing values generated)
+(17,873 real changes made)
+(21,551 real changes made)
+(10,725 real changes made)
+(5,874 real changes made)
+(17,721 missing values generated)
+(10,692 real changes made)
+(0 real changes made)
+(7,029 real changes made)
+(note: file sipp08w8_small.dta not found)
+file sipp08w8_small.dta saved
+(245,771 observations deleted)
+(1,093 observations deleted)
+(41,926 missing values generated)
+(37,297 real changes made)
+(418 real changes made)
+(1,040 real changes made)
+(55,218 missing values generated)
+(17,909 real changes made)
+(21,007 real changes made)
+(10,519 real changes made)
+(5,783 real changes made)
+(17,219 missing values generated)
+(10,372 real changes made)
+(0 real changes made)
+(6,847 real changes made)
+(note: file sipp08w9_small.dta not found)
+file sipp08w9_small.dta saved
+(237,106 observations deleted)
+(1,083 observations deleted)
+(40,629 missing values generated)
+(35,830 real changes made)
+(415 real changes made)
+(981 real changes made)
+(53,557 missing values generated)
+(17,424 real changes made)
+(20,317 real changes made)
+(10,192 real changes made)
+(5,624 real changes made)
+(16,499 missing values generated)
+(9,781 real changes made)
+(0 real changes made)
+(6,718 real changes made)
+(note: file sipp08w10_small.dta not found)
+file sipp08w10_small.dta saved
+(233,557 observations deleted)
+(948 observations deleted)
+(40,219 missing values generated)
+(35,052 real changes made)
+(394 real changes made)
+(925 real changes made)
+(52,681 missing values generated)
+(17,022 real changes made)
+(20,013 real changes made)
+(10,018 real changes made)
+(5,628 real changes made)
+(16,081 missing values generated)
+(9,613 real changes made)
+(0 real changes made)
+(6,468 real changes made)
+(note: file sipp08w11_small.dta not found)
+file sipp08w11_small.dta saved
+(231,151 observations deleted)
+(981 observations deleted)
+(39,443 missing values generated)
+(35,150 real changes made)
+(382 real changes made)
+(948 real changes made)
+(52,715 missing values generated)
+(17,214 real changes made)
+(19,758 real changes made)
+(10,135 real changes made)
+(5,608 real changes made)
+(16,018 missing values generated)
+(9,657 real changes made)
+(0 real changes made)
+(6,361 real changes made)
+(note: file sipp08w12_small.dta not found)
+file sipp08w12_small.dta saved
+(227,205 observations deleted)
+(954 observations deleted)
+(39,213 missing values generated)
+(34,370 real changes made)
+(383 real changes made)
+(952 real changes made)
+(51,992 missing values generated)
+(16,949 real changes made)
+(19,538 real changes made)
+(9,998 real changes made)
+(5,507 real changes made)
+(15,790 missing values generated)
+(9,531 real changes made)
+(0 real changes made)
+(6,259 real changes made)
+(note: file sipp08w13_small.dta not found)
+file sipp08w13_small.dta saved
+(224,274 observations deleted)
+(875 observations deleted)
+(38,907 missing values generated)
+(33,675 real changes made)
+(362 real changes made)
+(871 real changes made)
+(51,196 missing values generated)
+(16,633 real changes made)
+(19,295 real changes made)
+(9,836 real changes made)
+(5,432 real changes made)
+(15,718 missing values generated)
+(9,452 real changes made)
+(0 real changes made)
+(6,266 real changes made)
+(note: file sipp08w14_small.dta not found)
+file sipp08w14_small.dta saved
+(216,999 observations deleted)
+(793 observations deleted)
+(37,335 missing values generated)
+(32,948 real changes made)
+(353 real changes made)
+(795 real changes made)
+(50,083 missing values generated)
+(16,413 real changes made)
+(18,681 real changes made)
+(9,646 real changes made)
+(5,343 real changes made)
+(14,996 missing values generated)
+(8,987 real changes made)
+(0 real changes made)
+(6,009 real changes made)
+(note: file sipp08w15_small.dta not found)
+file sipp08w15_small.dta saved
+(216,999 observations deleted)
+(793 observations deleted)
+(37,335 missing values generated)
+(32,948 real changes made)
+(353 real changes made)
+(795 real changes made)
+(50,083 missing values generated)
+(16,413 real changes made)
+(18,681 real changes made)
+(9,646 real changes made)
+(5,343 real changes made)
+(14,996 missing values generated)
+(8,987 real changes made)
+(0 real changes made)
+(6,009 real changes made)
+(note: file sipp08w16_small.dta not found)
+file sipp08w16_small.dta saved
+
+. 
+. * Append
+. set more off
+
+. use sipp08w1_small.dta, clear
+
+. foreach i of num 2/16 {         
+  2.         append using sipp08w`i'_small.dta
+  3.         sort id wave srefmon
+  4. }
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+
+. 
+. save sipp08_append.dta, replace
+file sipp08_append.dta saved
+
+. 
+. * Merge in longitudinal panel weight
+. merge m:1 ssuid epppnum using sipp08lwt, keepusing(*wt)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                        97,210
+        from master                    97,206  (_merge==1)
+        from using                          4  (_merge==2)
+
+    matched                         1,254,739  (_merge==3)
+    -----------------------------------------
+
+. keep if _m == 3
+(97,210 observations deleted)
+
+. 
+. egen pid = group(id)
+
+. drop id
+
+. rename pid id
+
+. 
+. order id wave srefmon
+
+. 
+. * Save
+. save sipp08_append.dta, replace
+file sipp08_append.dta saved
+
+. 
+. * Miscellaneous
+. use sipp08_append.dta, clear
+
+. 
+. keep if age >= 25 & age <= 54 
+(769,176 observations deleted)
+
+. keep if emp != .
+(85,464 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0487705
+       2 |  .0301135
+       3 |  .0261494
+       4 |  .0248542
+       5 |  .0226097
+       6 |  .0241323
+       7 |  .0248687
+       8 |  .0240085
+       9 |  .0246163
+      10 |  .0244323
+      11 |  .0238248
+      12 |  .0244961
+      13 |  .0248752
+      14 |  .0241463
+      15 |  .0221932
+---------+----------
+   Total |   .026371
+--------------------
+
+. 
+. bys id: gen count = _n
+
+. bys id: gen max = _N
+
+. sum max
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+         max |    400,099     12.6113    3.848119          1         16
+
+. 
+. keep if max == `r(max)'
+(257,283 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |   .045261
+       2 |  .0273359
+       3 |  .0250952
+       4 |   .024199
+       5 |  .0211741
+       6 |  .0217343
+       7 |  .0221824
+       8 |  .0228546
+       9 |  .0221824
+      10 |  .0219583
+      11 |  .0215102
+      12 |  .0218463
+      13 |  .0230786
+      14 |    .02095
+      15 |  .0184853
+---------+----------
+   Total |  .0236458
+--------------------
+
+. 
+end of do-file
+
+. exit, clear

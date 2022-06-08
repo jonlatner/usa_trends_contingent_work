@@ -1,0 +1,100 @@
+May Contingent Worker Survey (CWS) comes from ipums
+
+Samples: 58
+
+IPUMS-CPS, February 1995 	
+IPUMS-CPS, ASEC 1996 	
+IPUMS-CPS, February 1997 	
+IPUMS-CPS, ASEC 1997 	
+IPUMS-CPS, ASEC 1998 	
+IPUMS-CPS, February 1999 	
+IPUMS-CPS, ASEC 1999 	
+IPUMS-CPS, ASEC 2000 	
+IPUMS-CPS, February 2001 	
+IPUMS-CPS, ASEC 2001 	
+IPUMS-CPS, ASEC 2002 	
+IPUMS-CPS, ASEC 2003 	
+IPUMS-CPS, ASEC 2004 	
+IPUMS-CPS, February 2005 	
+IPUMS-CPS, ASEC 2005 	
+IPUMS-CPS, ASEC 2006 	
+IPUMS-CPS, ASEC 2007 	
+IPUMS-CPS, ASEC 2008 	
+IPUMS-CPS, ASEC 2009 	
+IPUMS-CPS, ASEC 2010 	
+IPUMS-CPS, ASEC 2011 	
+IPUMS-CPS, ASEC 2012 	
+IPUMS-CPS, ASEC 2013 	
+IPUMS-CPS, ASEC 2014 	
+IPUMS-CPS, ASEC 2015 	
+IPUMS-CPS, ASEC 2016 	
+IPUMS-CPS, ASEC 2017 	
+IPUMS-CPS, May 2017 	
+IPUMS-CPS, ASEC 2018 	
+IPUMS-CPS, ASEC 2019 	
+IPUMS-CPS, November 2019 	
+IPUMS-CPS, December 2019 	
+IPUMS-CPS, January 2020 	
+IPUMS-CPS, February 2020 	
+IPUMS-CPS, March 2020 	
+IPUMS-CPS, April 2020 	
+IPUMS-CPS, May 2020 	
+IPUMS-CPS, June 2020 	
+IPUMS-CPS, July 2020 	
+IPUMS-CPS, August 2020 	
+IPUMS-CPS, September 2020 	
+IPUMS-CPS, October 2020 	
+IPUMS-CPS, November 2020 	
+IPUMS-CPS, December 2020 	
+IPUMS-CPS, January 2021 	
+IPUMS-CPS, February 2021 	
+IPUMS-CPS, March 2021 	
+IPUMS-CPS, April 2021 	
+IPUMS-CPS, May 2021 	
+IPUMS-CPS, June 2021 	
+IPUMS-CPS, July 2021 	
+IPUMS-CPS, August 2021 	
+IPUMS-CPS, September 2021 	
+IPUMS-CPS, October 2021 	
+IPUMS-CPS, November 2021 	
+IPUMS-CPS, December 2021 	
+IPUMS-CPS, January 2022 	
+IPUMS-CPS, February 2022 	
+
+Variables: 35
+Type 	Variable 	Label
+H 	YEAR 	Survey year
+H 	SERIAL 	Household serial number
+H 	MONTH 	Month
+H 	HWTFINL 	Household weight, Basic Monthly
+H 	CPSID 	CPSID, household record
+H 	ASECFLAG 	Flag for ASEC
+H 	HFLAG 	Flag for the 3/8 file 2014
+H 	ASECWTH 	Annual Social and Economic Supplement Household weight
+P 	PERNUM 	Person number in sample unit
+P 	WTFINL 	Final Basic Weight
+P 	CPSIDP 	CPSID, person record
+P 	ASECWT 	Annual Social and Economic Supplement Weight
+P 	AGE 	Age
+P 	SEX 	Sex
+P 	RACE 	Race
+P 	HISPAN 	Hispanic origin
+P 	EMPSTAT 	Employment status
+P 	LABFORCE 	Labor force status
+P 	EDUC 	Educational attainment recode
+P 	CWTEMP 	Job is temporary
+P 	CWCONTOLD 	Could have continued work at old job if wished
+P 	CWCONTCUR 	Can work as long as desired at your current job
+P 	CWPDTAG 	Paid by a temporary agency
+P 	CWONCALL 	On-call worker (and type) last week
+P 	CWDAYLAB 	Day laborer last week
+P 	CWCONTRACT 	Worked for a company that contracts out you or your services in the past week
+P 	CWCONTRACTIC 	Worked as an independent contractor, independent consultant, or free-lance worker in the past week
+P 	CWTYTEMP 	Individual paid by a temporary help agency
+P 	CWTYINCTR 	Individual is an independent contractor
+P 	CWTYCOCTR 	Individual is a company contract worker
+P 	CWTYCALLDAY 	Individual is an on call worker or day laborer
+P 	CWDEFNARR 	Contingent worker (narrow definition)
+P 	CWDEFMED 	Contingent worker (medium definition)
+P 	CWDEFBRD 	Contingent worker (broad definition)
+P 	CWSUPPWT 	Contingent Work Supplement Weight

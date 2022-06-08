@@ -1,0 +1,2017 @@
+---------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/jonathanlatner/Desktop/SIPP/programs/sipp04/sipplgtwgt2004w12.log
+  log type:  text
+ opened on:  21 Mar 2022, 11:04:06
+
+. set mem 1000m
+
+. 
+. **------------------------------------------------;
+. 
+. **  This program reads the 2004 SIPP12 Longitudnal Weight Data File 
+. **  Note:  This program is distributed under the GNU GPL. See end of
+. **  this file and http://www.gnu.org/licenses/ for details.
+. **  by Jean Roth Wed Nov  3 15:36:05 EDT 2010
+. **  Please report errors to jroth@nber.org
+. **  run with do sipplgtwgt2004w12
+. 
+. **-----------------------------------------------;
+. 
+. ** The following line should contain
+. **   the complete path and name of the raw data file.
+. **   On a PC, use backslashes in paths as in C:\  
+. 
+. local dat_name "/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp04/lgtwgt2004w12.dat"
+
+. 
+. ** The following line should contain the path to your output '.dta' file 
+. 
+. local dta_name "/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp04/sipplgtwgt2004w12.dta"
+
+. 
+. ** The following line should contain the path to the data dictionary file 
+. 
+. local dct_name "/Users/jonathanlatner/Desktop/SIPP/programs/sipp04/sipplgtwgt2004w12.dct"
+
+. 
+. ** The line below does NOT need to be changed 
+. 
+. quietly infile using "`dct_name'", using("`dat_name'") clear
+
+. 
+. **  Decimal places have been made explict in the dictionary file.
+. **  Stata resolves a missing value of -1 / # of decimal places as a missing value.
+. 
+. **Everything below this point, aside from the final save, are value labels
+. 
+. #delimit ;
+delimiter now ;
+. ;
+. label values spanel   spanel;
+
+.  label define spanel  
+>         2004        "Panel Year"                    
+> ;
+
+. #delimit cr
+delimiter now cr
+. desc,short
+
+Contains data
+  obs:       132,325                          
+ vars:            12                          
+ size:    11,909,250                          
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+. 
+. sort ssuid epppnum 
+
+. saveold `dta_name' , replace
+(saving in Stata 13 format)
+(FYI, saveold has options version(12) and version(11) that write files in older Stata formats)
+(note: file /Users/jonathanlatner/Desktop/SIPP/rawdata/sipp04/sipplgtwgt2004w12.dta not found)
+file /Users/jonathanlatner/Desktop/SIPP/rawdata/sipp04/sipplgtwgt2004w12.dta saved
+
+. 
+. 
+. 
+. ** Copyright 2010 shared by the National Bureau of Economic Research and Jean Roth ;
+. 
+. ** National Bureau of Economic Research. ;
+. ** 1050 Massachusetts Avenue ;
+. ** Cambridge, MA 02138 ;
+. ** jroth@nber.org ;
+. 
+. ** This program and all programs referenced in it are free software. You ;
+. ** can redistribute the program or modify it under the terms of the GNU ;
+. ** General Public License as published by the Free Software Foundation; 
+. ** either version 2 of the License, or (at your option) any later version. ;
+. 
+. ** This program is distributed in the hope that it will be useful, ;
+. ** but WITHOUT ANY WARRANTY, without even the implied warranty of ;
+. ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the ;
+. ** GNU General Public License for more details. ;
+. 
+. ** You should have received a copy of the GNU General Public License ;
+. ** along with this program, if not, write to the Free Software ;
+. ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA. ;
+. 
+end of do-file
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp04
+(note: file sipp04lwt.dta not found)
+file sipp04lwt.dta saved
+
+. 
+. 
+. /*
+> Copyright 2003 Heather Boushey
+> 
+> Center for Economic and Policy Research
+> 1621 Connecticut Avenue, NW
+> Suite 500
+> Washington, DC 20009
+> Tel: (202) 293-5380
+> Fax: (202) 588-1356
+> http://www.cepr.net
+> 
+> This program and all programs referenced in it are free software. You
+> can redistribute the program or modify it under the terms of the GNU
+> General Public License as published by the Free Software Foundation;
+> either version 2 of the License, or (at your option) any later version.
+> 
+> This program is distributed in the hope that it will be useful,
+> but WITHOUT ANY WARRANTY; without even the implied warranty of
+> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> GNU General Public License for more details.
+> 
+> You should have received a copy of the GNU General Public License
+> along with this program; if not, write to the Free Software
+> Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
+> USA.
+> */
+. 
+. 
+. 
+end of do-file
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD20218.000000"
+
+. set more off
+
+. global rootdir /Users/jonathanlatner/Desktop/SIPP
+
+. global output $rootdir/rawdata/sipp04
+
+. 
+. cd $output
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp04
+
+. 
+. foreach i of num 1/12 {         
+  2.         use sipp04w`i'.dta, clear
+  3. 
+.         
+.         /* This code will drop the first three months of each wave, thus
+>         generating a SIPP dataset by person-wave, rather than by person-month. */
+.         sort id wave srefmon
+  4.         egen seam_ = max(srefmon), by(id wave)
+  5.         sort id wave
+  6.         quietly by id wave: gen byte seam = seam_==srefmon
+  7.         label var seam "last month of wave"
+  8.         drop seam_
+  9.         keep if seam==1
+ 10.         
+.         keep if srefmon == 4
+ 11.         
+.         rename tage age
+ 12.         rename esex sex
+ 13.         rename tfipsst state
+ 14.         rename wpfinwgt weight /* person weight */
+ 15. 
+.         *Employment
+.         rename rmesr esr /* employment status */
+ 16.         rename epdjbthn paid_job /* paid job during reference period */
+ 17.         *rename emoonlit moonlit /* moonlighting - income from additional work */
+.         gen emp = 0 if esr>=1 & esr<=7
+ 18.         replace emp = 1 if esr>=1 & esr<=5
+ 19.         label var emp "Employed at least one week in a month"
+ 20.         label define emp 1 "Employed at least one week in a month" 0 "In LF, not employed all month"
+ 21. 
+.         gen temp_agency = 0 /* recode industry (ejbind), either first or second job */
+ 22.         replace temp_agency = 1 if ejbind1 == 731 | ejbind2 == 731
+ 23.         
+.         rename ecflag contingent /* LF: Flag indicating other-work-arrange */
+ 24. 
+.         gen temp_work = 0
+ 25.         replace temp_work = 1 if temp_agency == 1 | contingent == 1
+ 26. 
+.         *Education
+.         gen educ = 1 if eeduc<=38 &  eeduc~=.
+ 27.         replace educ = 2 if eeducate==39
+ 28.         replace educ = 3 if eeducate>=40 & eeducate<=43
+ 29.         replace educ = 4 if eeducate==44
+ 30.         replace educ = 5 if eeducate>=45 & eeducate<=48
+ 31.         drop eeducate
+ 32.         label define educ ///
+>         1 "less than high school" ///
+>         2 "high school grad" ///
+>         3 "some college" ///
+>         4 "college degree" ///
+>         5 "post-college"
+ 33.         label values educ educ
+ 34. 
+.         *Race/ethnicity
+.         rename erace race1
+ 35.         rename eorigin ethnic
+ 36.         gen race = 1 if race1==1 & (ethnic<20 | ethnic>28)
+ 37.         replace race = 2 if race1==2 & (ethnic<20 | ethnic>28)
+ 38.         replace race = 3 if (ethnic>=20 & ethnic<=28)
+ 39.         replace race = 4 if race1>2 & (ethnic<20 | ethnic>28) & race1~=.
+ 40. 
+.         label define race_cepr 1 "White" 2 "Black" 3 "Hispanic" 4 "Other"
+ 41.         label values race race_cepr
+ 42. 
+.         keep id wave srefmon ssuid epppnum state age sex educ emp contingent temp_agency weight paid_job moonlit temp_wor
+> k
+ 43.         
+.         sort id wave srefmon
+ 44.         save sipp04w`i'_small.dta, replace
+ 45. }
+(331,190 observations deleted)
+(0 observations deleted)
+(54,126 missing values generated)
+(53,622 real changes made)
+(0 real changes made)
+(619 real changes made)
+(68,347 missing values generated)
+(21,285 real changes made)
+(28,356 real changes made)
+(12,282 real changes made)
+(6,424 real changes made)
+(22,993 missing values generated)
+(14,354 real changes made)
+(0 real changes made)
+(8,639 real changes made)
+variable moonlit not found
+r(111);
+
+end of do-file
+
+r(111);
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD20218.000000"
+
+. set more off
+
+. global rootdir /Users/jonathanlatner/Desktop/SIPP
+
+. global output $rootdir/rawdata/sipp04
+
+. 
+. cd $output
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp04
+
+. 
+. foreach i of num 1/12 {         
+  2.         use sipp04w`i'.dta, clear
+  3. 
+.         
+.         /* This code will drop the first three months of each wave, thus
+>         generating a SIPP dataset by person-wave, rather than by person-month. */
+.         sort id wave srefmon
+  4.         egen seam_ = max(srefmon), by(id wave)
+  5.         sort id wave
+  6.         quietly by id wave: gen byte seam = seam_==srefmon
+  7.         label var seam "last month of wave"
+  8.         drop seam_
+  9.         keep if seam==1
+ 10.         
+.         keep if srefmon == 4
+ 11.         
+.         rename tage age
+ 12.         rename esex sex
+ 13.         rename tfipsst state
+ 14.         rename wpfinwgt weight /* person weight */
+ 15. 
+.         *Employment
+.         rename rmesr esr /* employment status */
+ 16.         rename epdjbthn paid_job /* paid job during reference period */
+ 17.         rename emoonlit moonlit /* moonlighting - income from additional work */
+ 18.         gen emp = 0 if esr>=1 & esr<=7
+ 19.         replace emp = 1 if esr>=1 & esr<=5
+ 20.         label var emp "Employed at least one week in a month"
+ 21.         label define emp 1 "Employed at least one week in a month" 0 "In LF, not employed all month"
+ 22. 
+.         gen temp_agency = 0 /* recode industry (ejbind), either first or second job */
+ 23.         replace temp_agency = 1 if ejbind1 == 731 | ejbind2 == 731
+ 24.         
+.         rename ecflag contingent /* LF: Flag indicating other-work-arrange */
+ 25. 
+.         gen temp_work = 0
+ 26.         replace temp_work = 1 if temp_agency == 1 | contingent == 1
+ 27. 
+.         *Education
+.         gen educ = 1 if eeduc<=38 &  eeduc~=.
+ 28.         replace educ = 2 if eeducate==39
+ 29.         replace educ = 3 if eeducate>=40 & eeducate<=43
+ 30.         replace educ = 4 if eeducate==44
+ 31.         replace educ = 5 if eeducate>=45 & eeducate<=48
+ 32.         drop eeducate
+ 33.         label define educ ///
+>         1 "less than high school" ///
+>         2 "high school grad" ///
+>         3 "some college" ///
+>         4 "college degree" ///
+>         5 "post-college"
+ 34.         label values educ educ
+ 35. 
+.         *Race/ethnicity
+.         rename erace race1
+ 36.         rename eorigin ethnic
+ 37.         gen race = 1 if race1==1 & (ethnic<20 | ethnic>28)
+ 38.         replace race = 2 if race1==2 & (ethnic<20 | ethnic>28)
+ 39.         replace race = 3 if (ethnic>=20 & ethnic<=28)
+ 40.         replace race = 4 if race1>2 & (ethnic<20 | ethnic>28) & race1~=.
+ 41. 
+.         label define race_cepr 1 "White" 2 "Black" 3 "Hispanic" 4 "Other"
+ 42.         label values race race_cepr
+ 43. 
+.         keep id wave srefmon ssuid epppnum state age sex educ emp contingent temp_agency weight paid_job moonlit temp_wor
+> k
+ 44.         
+.         sort id wave srefmon
+ 45.         save sipp04w`i'_small.dta, replace
+ 46. }
+(331,190 observations deleted)
+(0 observations deleted)
+(54,126 missing values generated)
+(53,622 real changes made)
+(0 real changes made)
+(619 real changes made)
+(68,347 missing values generated)
+(21,285 real changes made)
+(28,356 real changes made)
+(12,282 real changes made)
+(6,424 real changes made)
+(22,993 missing values generated)
+(14,354 real changes made)
+(0 real changes made)
+(8,639 real changes made)
+(note: file sipp04w1_small.dta not found)
+file sipp04w1_small.dta saved
+(308,261 observations deleted)
+(936 observations deleted)
+(50,343 missing values generated)
+(51,311 real changes made)
+(0 real changes made)
+(478 real changes made)
+(64,931 missing values generated)
+(20,937 real changes made)
+(26,354 real changes made)
+(11,599 real changes made)
+(6,041 real changes made)
+(21,254 missing values generated)
+(13,349 real changes made)
+(0 real changes made)
+(7,905 real changes made)
+(note: file sipp04w2_small.dta not found)
+file sipp04w2_small.dta saved
+(297,751 observations deleted)
+(1,263 observations deleted)
+(49,184 missing values generated)
+(48,700 real changes made)
+(0 real changes made)
+(387 real changes made)
+(62,688 missing values generated)
+(20,269 real changes made)
+(25,312 real changes made)
+(11,242 real changes made)
+(5,865 real changes made)
+(20,290 missing values generated)
+(12,744 real changes made)
+(0 real changes made)
+(7,546 real changes made)
+(note: file sipp04w3_small.dta not found)
+file sipp04w3_small.dta saved
+(292,575 observations deleted)
+(1,171 observations deleted)
+(48,818 missing values generated)
+(47,148 real changes made)
+(0 real changes made)
+(315 real changes made)
+(61,365 missing values generated)
+(19,829 real changes made)
+(24,781 real changes made)
+(11,006 real changes made)
+(5,749 real changes made)
+(19,836 missing values generated)
+(12,466 real changes made)
+(0 real changes made)
+(7,370 real changes made)
+(note: file sipp04w4_small.dta not found)
+file sipp04w4_small.dta saved
+(285,583 observations deleted)
+(1,339 observations deleted)
+(47,118 missing values generated)
+(46,845 real changes made)
+(0 real changes made)
+(354 real changes made)
+(60,699 missing values generated)
+(19,999 real changes made)
+(24,246 real changes made)
+(10,795 real changes made)
+(5,659 real changes made)
+(19,376 missing values generated)
+(12,102 real changes made)
+(0 real changes made)
+(7,274 real changes made)
+(note: file sipp04w5_small.dta not found)
+file sipp04w5_small.dta saved
+(281,754 observations deleted)
+(1,364 observations deleted)
+(46,996 missing values generated)
+(45,901 real changes made)
+(0 real changes made)
+(338 real changes made)
+(59,956 missing values generated)
+(19,662 real changes made)
+(24,074 real changes made)
+(10,629 real changes made)
+(5,591 real changes made)
+(19,121 missing values generated)
+(11,946 real changes made)
+(0 real changes made)
+(7,175 real changes made)
+(note: file sipp04w6_small.dta not found)
+file sipp04w6_small.dta saved
+(277,200 observations deleted)
+(1,282 observations deleted)
+(46,234 missing values generated)
+(44,936 real changes made)
+(0 real changes made)
+(329 real changes made)
+(58,900 missing values generated)
+(19,378 real changes made)
+(23,516 real changes made)
+(10,455 real changes made)
+(5,551 real changes made)
+(18,653 missing values generated)
+(11,714 real changes made)
+(0 real changes made)
+(6,939 real changes made)
+(note: file sipp04w7_small.dta not found)
+file sipp04w7_small.dta saved
+(273,801 observations deleted)
+(1,251 observations deleted)
+(44,969 missing values generated)
+(45,132 real changes made)
+(0 real changes made)
+(269 real changes made)
+(59,264 missing values generated)
+(19,827 real changes made)
+(23,312 real changes made)
+(10,543 real changes made)
+(5,582 real changes made)
+(18,242 missing values generated)
+(11,460 real changes made)
+(0 real changes made)
+(6,782 real changes made)
+(note: file sipp04w8_small.dta not found)
+file sipp04w8_small.dta saved
+(127,794 observations deleted)
+(540 observations deleted)
+(21,667 missing values generated)
+(20,470 real changes made)
+(0 real changes made)
+(119 real changes made)
+(27,298 missing values generated)
+(9,179 real changes made)
+(10,765 real changes made)
+(4,817 real changes made)
+(2,537 real changes made)
+(8,802 missing values generated)
+(5,465 real changes made)
+(0 real changes made)
+(3,337 real changes made)
+(note: file sipp04w9_small.dta not found)
+file sipp04w9_small.dta saved
+(124,764 observations deleted)
+(556 observations deleted)
+(21,228 missing values generated)
+(19,800 real changes made)
+(0 real changes made)
+(82 real changes made)
+(26,576 missing values generated)
+(8,861 real changes made)
+(10,548 real changes made)
+(4,677 real changes made)
+(2,490 real changes made)
+(8,467 missing values generated)
+(5,282 real changes made)
+(0 real changes made)
+(3,185 real changes made)
+(note: file sipp04w10_small.dta not found)
+file sipp04w10_small.dta saved
+(121,455 observations deleted)
+(481 observations deleted)
+(20,416 missing values generated)
+(19,606 real changes made)
+(0 real changes made)
+(106 real changes made)
+(26,391 missing values generated)
+(8,820 real changes made)
+(10,350 real changes made)
+(4,708 real changes made)
+(2,513 real changes made)
+(8,165 missing values generated)
+(5,075 real changes made)
+(0 real changes made)
+(3,090 real changes made)
+(note: file sipp04w11_small.dta not found)
+file sipp04w11_small.dta saved
+(122,204 observations deleted)
+(461 observations deleted)
+(20,745 missing values generated)
+(19,499 real changes made)
+(0 real changes made)
+(124 real changes made)
+(26,587 missing values generated)
+(8,853 real changes made)
+(10,466 real changes made)
+(4,744 real changes made)
+(2,524 real changes made)
+(8,199 missing values generated)
+(5,048 real changes made)
+(0 real changes made)
+(3,151 real changes made)
+(note: file sipp04w12_small.dta not found)
+file sipp04w12_small.dta saved
+
+. 
+. * Append
+. set more off
+
+. use sipp04w1_small.dta, clear
+
+. foreach i of num 2/12 {         
+  2.         append using sipp04w`i'_small.dta
+  3.         sort id wave srefmon
+  4. }
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+
+. 
+. * Merge in longitudinal panel weight
+. merge m:1 ssuid epppnum using sipp04lwt, keepusing(lgtpnwt*)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                         1,173
+        from master                         0  (_merge==1)
+        from using                      1,173  (_merge==2)
+
+    matched                           953,664  (_merge==3)
+    -----------------------------------------
+
+. keep if _m == 3
+(1,173 observations deleted)
+
+. 
+. egen pid = group(id)
+
+. drop id
+
+. rename pid id
+
+. 
+. order id wave srefmon
+
+. 
+. * Save
+. save sipp04_append.dta, replace
+file sipp04_append.dta saved
+
+. 
+. * Miscellaneous
+. use sipp04_append.dta, clear
+
+. 
+. keep if age >= 25 & age <= 54 
+(562,468 observations deleted)
+
+. keep if emp != .
+(63,721 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0069587
+       2 |  .0063845
+       3 |  .0056906
+       4 |  .0046824
+       5 |  .0054698
+       6 |  .0055451
+       7 |  .0056354
+       8 |  .0038893
+       9 |  .0044665
+      10 |  .0031893
+      11 |  .0036532
+      12 |  .0052297
+---------+----------
+   Total |  .0053409
+--------------------
+
+. 
+. bys id: gen count = _n
+
+. bys id: gen max = _N
+
+. sum max
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+         max |    327,475    8.325463    2.971956          1         12
+
+. 
+. keep if max == `r(max)'
+(249,127 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0041354
+       2 |  .0071987
+       3 |  .0033696
+       4 |  .0032164
+       5 |  .0033696
+       6 |  .0050544
+       7 |  .0027569
+       8 |  .0026038
+       9 |  .0027569
+      10 |  .0021443
+      11 |  .0016848
+      12 |  .0041354
+---------+----------
+   Total |  .0035355
+--------------------
+
+. 
+end of do-file
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD20218.000000"
+
+. 
+. * Miscellaneous
+. use sipp04_append.dta, clear
+
+. 
+. keep if age >= 25 & age <= 54 
+(562,468 observations deleted)
+
+. keep if emp == 1
+(74,918 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0063928
+       2 |  .0062646
+       3 |  .0056803
+       4 |  .0045403
+       5 |  .0052701
+       6 |  .0054277
+       7 |  .0054169
+       8 |   .003893
+       9 |  .0043784
+      10 |   .003059
+      11 |  .0036793
+      12 |   .004917
+---------+----------
+   Total |  .0051663
+--------------------
+
+. 
+. bys id: gen count = _n
+
+. bys id: gen max = _N
+
+. sum max
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+         max |    316,278    8.268542    2.963498          1         12
+
+. 
+. keep if max == `r(max)'
+(244,206 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0038295
+       2 |  .0061605
+       3 |  .0031635
+       4 |   .002664
+       5 |  .0031635
+       6 |  .0044955
+       7 |  .0024975
+       8 |  .0024975
+       9 |   .002664
+      10 |  .0018315
+      11 |   .001665
+      12 |    .00333
+---------+----------
+   Total |  .0031635
+--------------------
+
+. 
+end of do-file
+
+. tab emp
+
+Employed at |
+  least one |
+  week in a |
+      month |      Freq.     Percent        Cum.
+------------+-----------------------------------
+          1 |     72,072      100.00      100.00
+------------+-----------------------------------
+      Total |     72,072      100.00
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD20218.000000"
+
+. * Miscellaneous
+. use sipp04_append.dta, clear
+
+. 
+end of do-file
+
+. tab emp
+
+Employed at |
+  least one |
+  week in a |
+      month |      Freq.     Percent        Cum.
+------------+-----------------------------------
+          0 |     18,850        3.91        3.91
+          1 |    462,970       96.09      100.00
+------------+-----------------------------------
+      Total |    481,820      100.00
+
+. tab temp_work 
+
+  temp_work |      Freq.     Percent        Cum.
+------------+-----------------------------------
+          0 |    950,144       99.63       99.63
+          1 |      3,520        0.37      100.00
+------------+-----------------------------------
+      Total |    953,664      100.00
+
+. tab temp_work emp
+
+           | Employed at least one
+           |    week in a month
+ temp_work |         0          1 |     Total
+-----------+----------------------+----------
+         0 |    18,651    460,024 |   478,675 
+         1 |       199      2,946 |     3,145 
+-----------+----------------------+----------
+     Total |    18,850    462,970 |   481,820 
+
+
+. tab contingent emp
+
+      LF: Flag |
+ indicating an | Employed at least one
+other-work-arr |    week in a month
+      angement |         0          1 |     Total
+---------------+----------------------+----------
+Not applicable |    18,651    460,024 |   478,675 
+           Yes |       199      2,946 |     3,145 
+---------------+----------------------+----------
+         Total |    18,850    462,970 |   481,820 
+
+
+. tab temp_agency emp
+
+           | Employed at least one
+temp_agenc |    week in a month
+         y |         0          1 |     Total
+-----------+----------------------+----------
+         0 |    18,850    462,970 |   481,820 
+-----------+----------------------+----------
+     Total |    18,850    462,970 |   481,820 
+
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD20218.000000"
+
+. set more off
+
+. global rootdir /Users/jonathanlatner/Desktop/SIPP
+
+. global output $rootdir/rawdata/sipp04
+
+. 
+. cd $output
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp04
+
+. 
+. sipp04w1.dta
+sipp04w1.dta is not a valid command name
+r(199);
+
+end of do-file
+
+r(199);
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD20218.000000"
+
+. set more off
+
+. global rootdir /Users/jonathanlatner/Desktop/SIPP
+
+. global output $rootdir/rawdata/sipp04
+
+. 
+. cd $output
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp04
+
+. 
+. use sipp04w1.dta, clear
+
+. 
+end of do-file
+
+. tab ejbind1
+
+                      JB: Industry code |      Freq.     Percent        Cum.
+----------------------------------------+-----------------------------------
+                        Not in Universe |    244,605       55.36       55.36
+                  Crop production (111) |      1,188        0.27       55.63
+                Animal production (112) |        912        0.21       55.83
+    Forestry except logging (1131,1132) |         80        0.02       55.85
+                         Logging (1133) |        224        0.05       55.90
+   Fishing, hunting, and trapping (114) |         12        0.00       55.91
+Support activities for agriculture and  |        200        0.05       55.95
+           Oil and gas extraction (211) |         76        0.02       55.97
+                     Coal mining (2121) |         96        0.02       55.99
+                Metal ore mining (2122) |         32        0.01       56.00
+Nonmetallic mineral mining and quarryin |        144        0.03       56.03
+ Not specified type of mining (Part 21) |          4        0.00       56.03
+    Support activities for mining (213) |        400        0.09       56.12
+Electric power generation, transmission |        856        0.19       56.32
+        Natural gas distribution (2212) |        148        0.03       56.35
+Electric and gas, and other combination |        116        0.03       56.38
+Water, steam, air-conditioning, and irr |        332        0.08       56.45
+    Sewage treatment facilities (22132) |        168        0.04       56.49
+      Not specified utilities (Part 22) |          4        0.00       56.49
+                      Construction (23) |     12,232        2.77       59.26
+Animal food, grain and oilseed milling  |        260        0.06       59.32
+Sugar and confectionery products (3113) |        128        0.03       59.35
+Fruit and vegetable preserving and spec |        312        0.07       59.42
+     Dairy product manufacturing (3115) |        156        0.04       59.45
+Animal slaughtering and processing (311 |        744        0.17       59.62
+               Retail bakeries (311811) |        264        0.06       59.68
+Bakeries, except retail  (3118 .exc. 31 |        324        0.07       59.75
+Seafood and other miscellaneous foods,  |        324        0.07       59.83
+Not specified food industries (Part 311 |         20        0.00       59.83
+          Beverage manufacturing (3121) |        280        0.06       59.89
+           Tobacco manufacturing (3122) |         56        0.01       59.91
+   Fiber, yarn, and thread mills (3131) |        104        0.02       59.93
+Fabric mills, except knitting (3132 exc |        256        0.06       59.99
+Textile and fabric finishing and coatin |         52        0.01       60.00
+           Carpet and rug mills (31411) |         72        0.02       60.02
+Textile product mills, except carpets a |        196        0.04       60.06
+           Knitting mills (31324, 3151) |         76        0.02       60.08
+Cut and sew apparel manufacturing (3152 |        472        0.11       60.18
+Apparel accessories and other apparel m |         64        0.01       60.20
+          Footwear manufacturing (3162) |         52        0.01       60.21
+Leather tanning and products, except fo |         72        0.02       60.23
+Pulp, paper, and paperboard mills (3221 |        376        0.09       60.31
+Paperboard containers and boxes (32221) |        332        0.08       60.39
+Miscellaneous paper and pulp products   |        208        0.05       60.43
+Printing and related support activities |      1,036        0.23       60.67
+             Petroleum refining (32411) |        152        0.03       60.70
+Miscellaneous petroleum and coal produc |         44        0.01       60.71
+Resin, synthetic rubber and fibers, and |        128        0.03       60.74
+Agricultural chemical manufacturing  (3 |         56        0.01       60.75
+Pharmaceutical and medicine manufacturi |        740        0.17       60.92
+Paint, coating, and adhesive manufactur |        128        0.03       60.95
+Soap, cleaning compound, and cosmetics  |        240        0.05       61.01
+Industrial and miscellaneous chemicals  |        560        0.13       61.13
+  Plastics product manufacturing (3261) |        752        0.17       61.30
+             Tire manufacturing (32621) |        112        0.03       61.33
+Rubber products, except tires, manufact |        156        0.04       61.36
+Pottery, ceramics, and related products |         40        0.01       61.37
+Structural clay product manufacturing ( |         72        0.02       61.39
+Glass and glass product manufacturing   |        236        0.05       61.44
+Cement, concrete, lime, and gypsum prod |        312        0.07       61.51
+Miscellaneous nonmetallic mineral produ |        188        0.04       61.56
+Iron and steel mills and steel product  |        392        0.09       61.64
+Aluminum production and processing  (33 |         88        0.02       61.66
+Nonferrous metal, except aluminum, prod |        112        0.03       61.69
+                       Foundries (3315) |        188        0.04       61.73
+    Metal forgings and stampings (3321) |        196        0.04       61.78
+Cutlery and hand tool manufacturing  (3 |        104        0.02       61.80
+Structural metals, and tank and shippin |        524        0.12       61.92
+Machine shops; turned product; screw, n |        496        0.11       62.03
+Coating, engraving, heat treating and a |        192        0.04       62.07
+Ordnance (332992, 332993, 332994, 33299 |         28        0.01       62.08
+Miscellaneous fabricated metal products |        548        0.12       62.20
+Not specified metal industries (Part 33 |         12        0.00       62.21
+Agricultural implement manufacturing (3 |        104        0.02       62.23
+Construction, mining and oil field mach |        152        0.03       62.26
+Commercial and service industry machine |        208        0.05       62.31
+Metalworking machinery manufacturing (3 |        340        0.08       62.39
+Engines, turbines, and power transmissi |        128        0.03       62.42
+Machinery manufacturing, n.e.c. (3332,  |      1,016        0.23       62.65
+Not specified machinery manufacturing ( |         12        0.00       62.65
+Computer and peripheral equipment manuf |        488        0.11       62.76
+Communications, audio, and video equipm |        252        0.06       62.82
+Navigational, measuring, electromedical |        432        0.10       62.92
+Electronic component and product manufa |      1,020        0.23       63.15
+Household appliance manufacturing (3352 |        224        0.05       63.20
+Electrical lighting, equipment, and sup |        748        0.17       63.37
+Motor vehicles and motor vehicle equipm |      2,352        0.53       63.90
+Aircraft and parts manufacturing (33641 |        672        0.15       64.05
+Aerospace products and parts manufactur |        396        0.09       64.14
+Railroad rolling stock manufacturing (3 |         28        0.01       64.15
+          Ship and boat building (3366) |        364        0.08       64.23
+Other transportation equipment manufact |         80        0.02       64.25
+  Sawmills and wood preservation (3211) |        296        0.07       64.31
+Veneer, plywood, and engineered wood pr |        108        0.02       64.34
+Prefabricated wood buildings and mobile |        100        0.02       64.36
+Miscellaneous wood products (3219 excep |        400        0.09       64.45
+Furniture and related product manufactu |        732        0.17       64.62
+Medical equipment and supplies manufact |        616        0.14       64.76
+Toys, amusement, and sporting goods man |        200        0.05       64.80
+Miscellaneous manufacturing, n.e.c.  (3 |        592        0.13       64.94
+Not specified manufacturing industries  |        200        0.05       64.98
+Motor vehicles, parts and supplies, mer |        316        0.07       65.05
+Furniture and home furnishing, merchant |        132        0.03       65.08
+Lumber and other construction materials |        412        0.09       65.18
+Professional and commercial equipment a |        624        0.14       65.32
+Metals and minerals, except petroleum,  |        100        0.02       65.34
+Electrical goods, merchant wholesalers  |        440        0.10       65.44
+Hardware, plumbing and heating equipmen |        352        0.08       65.52
+Machinery, equipment, and supplies, mer |        756        0.17       65.69
+Recyclable material, merchant wholesale |        172        0.04       65.73
+Miscellaneous durable goods, merchant w |        236        0.05       65.78
+Paper and paper products, merchant whol |        168        0.04       65.82
+Drugs, sundries, and chemical and allie |        444        0.10       65.92
+Apparel, fabrics, and notions, merchant |        176        0.04       65.96
+Groceries and related products, merchan |      1,320        0.30       66.26
+Farm product raw materials, merchant wh |        132        0.03       66.29
+Petroleum and petroleum products, merch |        276        0.06       66.35
+Alcoholic beverages, merchant wholesale |        240        0.05       66.41
+Farm supplies, merchant wholesalers (42 |        100        0.02       66.43
+Miscellaneous nondurable goods, merchan |        348        0.08       66.51
+Wholesale electronic markets, agents an |         16        0.00       66.51
+Not specified wholesale trade (Part 42) |         72        0.02       66.53
+              Automobile dealers (4411) |      1,964        0.44       66.97
+     Other motor vehicle dealers (4412) |        236        0.05       67.03
+Auto parts, accessories, and tire store |        624        0.14       67.17
+Furniture and home furnishings stores ( |        748        0.17       67.34
+    Household appliance stores (443111) |        100        0.02       67.36
+Radio, TV, and computer stores (443112, |        972        0.22       67.58
+Building material and supplies dealers  |      1,372        0.31       67.89
+                Hardware stores (44413) |        344        0.08       67.97
+Lawn and garden equipment and supplies  |        396        0.09       68.06
+                  Grocery stores (4451) |      4,272        0.97       69.02
+           Specialty food stores (4452) |        368        0.08       69.11
+   Beer, wine, and liquor stores (4453) |        104        0.02       69.13
+      Pharmacies and drug stores (4461) |      1,208        0.27       69.40
+Health and personal care, except drug,  |        372        0.08       69.49
+                Gasoline stations (447) |        856        0.19       69.68
+Clothing and accessories, except shoe,  |      1,112        0.25       69.93
+                    Shoe stores (44821) |        208        0.05       69.98
+Jewelry, luggage, and leather goods sto |        288        0.07       70.05
+Sporting goods, camera, and hobby and t |        664        0.15       70.20
+Sewing, needlework, and piece goods sto |        108        0.02       70.22
+            Music stores (45114, 45122) |        188        0.04       70.26
+   Book stores and news dealers (45121) |        172        0.04       70.30
+Department stores and discount stores ( |      3,580        0.81       71.11
+Miscellaneous general merchandise store |        644        0.15       71.26
+                 Retail florists (4531) |        208        0.05       71.31
+Office supplies and stationery stores ( |        208        0.05       71.35
+         Used merchandise stores (4533) |        316        0.07       71.42
+Gift, novelty, and souvenir shops (4532 |        296        0.07       71.49
+     Miscellaneous retail stores (4539) |        584        0.13       71.62
+         Electronic shopping   (454111) |         48        0.01       71.63
+             Mail order houses (454113) |        100        0.02       71.66
+       Vending machine operators (4542) |         84        0.02       71.68
+                   Fuel dealers (45431) |        176        0.04       71.72
+Other direct selling establishments (45 |        172        0.04       71.75
+Not specified retail trade (Part 44, 45 |        216        0.05       71.80
+               Air transportation (481) |        776        0.18       71.98
+              Rail transportation (482) |        408        0.09       72.07
+             Water transportation (483) |         68        0.02       72.09
+             Truck transportation (484) |      2,152        0.49       72.57
+Bus service and urban transit (4851, 48 |        772        0.17       72.75
+      Taxi and limousine service (4853) |        192        0.04       72.79
+          Pipeline transportation (486) |         32        0.01       72.80
+Scenic and sightseeing transportation ( |         48        0.01       72.81
+Services incidental to transportation ( |        828        0.19       73.00
+                   Postal Service (491) |      1,340        0.30       73.30
+          Couriers and messengers (492) |        880        0.20       73.50
+          Warehousing and storage (493) |        352        0.08       73.58
+           Newspaper publishers (51111) |        736        0.17       73.75
+Publishing, except newspapers and softw |        420        0.10       73.84
+             Software publishing (5112) |         80        0.02       73.86
+Motion pictures and video industries (5 |        436        0.10       73.96
+      Sound recording industries (5122) |         44        0.01       73.97
+Radio and television broadcasting and c |        660        0.15       74.12
+Internet publishing and broadcasting (5 |          4        0.00       74.12
+Wired telecommunications carriers (5171 |      1,408        0.32       74.44
+Other telecommunications services (517  |        560        0.13       74.56
+      Internet service providers (5181) |        112        0.03       74.59
+Data processing, hosting, and related s |         80        0.02       74.61
+         Libraries and archives (51912) |        316        0.07       74.68
+Other information services (5191 except |         48        0.01       74.69
+Banking and related activities (521, 52 |      2,700        0.61       75.30
+Savings institutions, including credit  |        428        0.10       75.40
+Non-depository credit and related activ |      1,536        0.35       75.74
+Securities, commodities, funds, trusts, |      1,020        0.23       75.98
+Insurance carriers and related activiti |      3,304        0.75       76.72
+                      Real estate (531) |      2,448        0.55       77.28
+Automotive equipment rental and leasing |        272        0.06       77.34
+     Video tape and disk rental (53223) |        160        0.04       77.38
+Other consumer goods rental (53221, 532 |        120        0.03       77.40
+Commercial, industrial, and other intan |        164        0.04       77.44
+                  Legal services (5411) |      1,672        0.38       77.82
+Accounting, tax preparation, bookkeepin |      1,188        0.27       78.09
+Architectural, engineering, and related |      1,808        0.41       78.50
+     Specialized design services (5414) |        208        0.05       78.54
+Computer systems design and related ser |      2,032        0.46       79.00
+Management, scientific, and technical c |        856        0.19       79.20
+Scientific research and development ser |        724        0.16       79.36
+Advertising and related services (5418) |        556        0.13       79.49
+            Veterinary services (54194) |        300        0.07       79.55
+Other professional, scientific, and tec |        372        0.08       79.64
+Management of companies and enterprises |         60        0.01       79.65
+             Employment services (5613) |      1,992        0.45       80.10
+       Business support services (5614) |      1,100        0.25       80.35
+Travel arrangements and reservation ser |        332        0.08       80.43
+Investigation and security services (56 |      1,056        0.24       80.67
+Services to buildings and dwellings (ex |      1,468        0.33       81.00
+           Landscaping services (56173) |      1,072        0.24       81.24
+Other administrative and other support  |        264        0.06       81.30
+Waste management and remediation servic |        580        0.13       81.43
+Elementary and secondary schools (6111) |     13,112        2.97       84.40
+Colleges and universities, including ju |      5,040        1.14       85.54
+Business, technical, and trade schools  |        212        0.05       85.59
+Other schools, instruction, and educati |        428        0.10       85.68
+           Offices of physicians (6211) |      2,368        0.54       86.22
+             Offices of dentists (6212) |        832        0.19       86.41
+       Offices of chiropractors (62131) |        164        0.04       86.45
+        Offices of optometrists (62132) |        132        0.03       86.48
+Offices of other health practitioners ( |        252        0.06       86.53
+         Outpatient care centers (6214) |      1,168        0.26       86.80
+       Home health care services (6216) |      1,260        0.29       87.08
+Other health care services (6215, 6219) |      1,488        0.34       87.42
+                        Hospitals (622) |      8,404        1.90       89.32
+         Nursing care facilities (6231) |      3,236        0.73       90.05
+Residential care facilities, without nu |      1,048        0.24       90.29
+  Individual and family services (6241) |      1,628        0.37       90.66
+Community food and housing, and emergen |        120        0.03       90.69
+Vocational rehabilitation services (624 |        420        0.10       90.78
+         Child day care services (6244) |      1,844        0.42       91.20
+Independent artists, performing arts, s |        536        0.12       91.32
+Museums, art galleries, historical site |        496        0.11       91.43
+                Bowling centers (71395) |         96        0.02       91.45
+Other amusement, gambling, and recreati |      2,024        0.46       91.91
+          Traveler accommodation (7211) |      2,216        0.50       92.41
+Recreational vehicle parks and camps, a |         88        0.02       92.43
+Restaurants and other food services (72 |     11,780        2.67       95.10
+Drinking places, alcoholic beverages (7 |        312        0.07       95.17
+Automotive repair and maintenance (8111 |      1,468        0.33       95.50
+                    Car washes (811192) |        216        0.05       95.55
+Electronic and precision equipment repa |        164        0.04       95.59
+Commercial and industrial machinery and |        332        0.08       95.66
+Personal and household goods repair and |        168        0.04       95.70
+Footwear and leather goods repair (8114 |          4        0.00       95.70
+                  Barber shops (812111) |         32        0.01       95.71
+                 Beauty salons (812112) |        876        0.20       95.91
+Nail salons and other personal care ser |        200        0.05       95.95
+Drycleaning and laundry services (8123) |        540        0.12       96.08
+Funeral homes, cemeteries, and cremator |        208        0.05       96.12
+         Other personal services (8129) |        304        0.07       96.19
+         Religious organizations (8131) |      1,616        0.37       96.56
+Civic, social, advocacy organizations,  |      1,280        0.29       96.85
+                   Labor unions (81393) |         60        0.01       96.86
+Business, professional, political, and  |        320        0.07       96.93
+               Private households (814) |      1,012        0.23       97.16
+Executive offices and legislative bodie |      3,044        0.69       97.85
+      Public finance activities (92113) |        548        0.12       97.97
+Other general government and support (9 |        184        0.04       98.02
+Justice, public order, and safety activ |      3,740        0.85       98.86
+Administration of human resource progra |      1,208        0.27       99.14
+Administration of environmental quality |        408        0.09       99.23
+Administration of economic programs and |        912        0.21       99.44
+National security and international aff |      1,620        0.37       99.80
+Persons whose last job was Armed Forces |        876        0.20      100.00
+----------------------------------------+-----------------------------------
+                                  Total |    441,849      100.00
+
+. tab ejbind1, nolabel
+
+        JB: |
+   Industry |
+       code |      Freq.     Percent        Cum.
+------------+-----------------------------------
+         -1 |    244,605       55.36       55.36
+        170 |      1,188        0.27       55.63
+        180 |        912        0.21       55.83
+        190 |         80        0.02       55.85
+        270 |        224        0.05       55.90
+        280 |         12        0.00       55.91
+        290 |        200        0.05       55.95
+        370 |         76        0.02       55.97
+        380 |         96        0.02       55.99
+        390 |         32        0.01       56.00
+        470 |        144        0.03       56.03
+        480 |          4        0.00       56.03
+        490 |        400        0.09       56.12
+        570 |        856        0.19       56.32
+        580 |        148        0.03       56.35
+        590 |        116        0.03       56.38
+        670 |        332        0.08       56.45
+        680 |        168        0.04       56.49
+        690 |          4        0.00       56.49
+        770 |     12,232        2.77       59.26
+       1070 |        260        0.06       59.32
+       1080 |        128        0.03       59.35
+       1090 |        312        0.07       59.42
+       1170 |        156        0.04       59.45
+       1180 |        744        0.17       59.62
+       1190 |        264        0.06       59.68
+       1270 |        324        0.07       59.75
+       1280 |        324        0.07       59.83
+       1290 |         20        0.00       59.83
+       1370 |        280        0.06       59.89
+       1390 |         56        0.01       59.91
+       1470 |        104        0.02       59.93
+       1480 |        256        0.06       59.99
+       1490 |         52        0.01       60.00
+       1570 |         72        0.02       60.02
+       1590 |        196        0.04       60.06
+       1670 |         76        0.02       60.08
+       1680 |        472        0.11       60.18
+       1690 |         64        0.01       60.20
+       1770 |         52        0.01       60.21
+       1790 |         72        0.02       60.23
+       1870 |        376        0.09       60.31
+       1880 |        332        0.08       60.39
+       1890 |        208        0.05       60.43
+       1990 |      1,036        0.23       60.67
+       2070 |        152        0.03       60.70
+       2090 |         44        0.01       60.71
+       2170 |        128        0.03       60.74
+       2180 |         56        0.01       60.75
+       2190 |        740        0.17       60.92
+       2270 |        128        0.03       60.95
+       2280 |        240        0.05       61.01
+       2290 |        560        0.13       61.13
+       2370 |        752        0.17       61.30
+       2380 |        112        0.03       61.33
+       2390 |        156        0.04       61.36
+       2470 |         40        0.01       61.37
+       2480 |         72        0.02       61.39
+       2490 |        236        0.05       61.44
+       2570 |        312        0.07       61.51
+       2590 |        188        0.04       61.56
+       2670 |        392        0.09       61.64
+       2680 |         88        0.02       61.66
+       2690 |        112        0.03       61.69
+       2770 |        188        0.04       61.73
+       2780 |        196        0.04       61.78
+       2790 |        104        0.02       61.80
+       2870 |        524        0.12       61.92
+       2880 |        496        0.11       62.03
+       2890 |        192        0.04       62.07
+       2970 |         28        0.01       62.08
+       2980 |        548        0.12       62.20
+       2990 |         12        0.00       62.21
+       3070 |        104        0.02       62.23
+       3080 |        152        0.03       62.26
+       3090 |        208        0.05       62.31
+       3170 |        340        0.08       62.39
+       3180 |        128        0.03       62.42
+       3190 |      1,016        0.23       62.65
+       3290 |         12        0.00       62.65
+       3360 |        488        0.11       62.76
+       3370 |        252        0.06       62.82
+       3380 |        432        0.10       62.92
+       3390 |      1,020        0.23       63.15
+       3470 |        224        0.05       63.20
+       3490 |        748        0.17       63.37
+       3570 |      2,352        0.53       63.90
+       3580 |        672        0.15       64.05
+       3590 |        396        0.09       64.14
+       3670 |         28        0.01       64.15
+       3680 |        364        0.08       64.23
+       3690 |         80        0.02       64.25
+       3770 |        296        0.07       64.31
+       3780 |        108        0.02       64.34
+       3790 |        100        0.02       64.36
+       3870 |        400        0.09       64.45
+       3890 |        732        0.17       64.62
+       3960 |        616        0.14       64.76
+       3970 |        200        0.05       64.80
+       3980 |        592        0.13       64.94
+       3990 |        200        0.05       64.98
+       4070 |        316        0.07       65.05
+       4080 |        132        0.03       65.08
+       4090 |        412        0.09       65.18
+       4170 |        624        0.14       65.32
+       4180 |        100        0.02       65.34
+       4190 |        440        0.10       65.44
+       4260 |        352        0.08       65.52
+       4270 |        756        0.17       65.69
+       4280 |        172        0.04       65.73
+       4290 |        236        0.05       65.78
+       4370 |        168        0.04       65.82
+       4380 |        444        0.10       65.92
+       4390 |        176        0.04       65.96
+       4470 |      1,320        0.30       66.26
+       4480 |        132        0.03       66.29
+       4490 |        276        0.06       66.35
+       4560 |        240        0.05       66.41
+       4570 |        100        0.02       66.43
+       4580 |        348        0.08       66.51
+       4585 |         16        0.00       66.51
+       4590 |         72        0.02       66.53
+       4670 |      1,964        0.44       66.97
+       4680 |        236        0.05       67.03
+       4690 |        624        0.14       67.17
+       4770 |        748        0.17       67.34
+       4780 |        100        0.02       67.36
+       4790 |        972        0.22       67.58
+       4870 |      1,372        0.31       67.89
+       4880 |        344        0.08       67.97
+       4890 |        396        0.09       68.06
+       4970 |      4,272        0.97       69.02
+       4980 |        368        0.08       69.11
+       4990 |        104        0.02       69.13
+       5070 |      1,208        0.27       69.40
+       5080 |        372        0.08       69.49
+       5090 |        856        0.19       69.68
+       5170 |      1,112        0.25       69.93
+       5180 |        208        0.05       69.98
+       5190 |        288        0.07       70.05
+       5270 |        664        0.15       70.20
+       5280 |        108        0.02       70.22
+       5290 |        188        0.04       70.26
+       5370 |        172        0.04       70.30
+       5380 |      3,580        0.81       71.11
+       5390 |        644        0.15       71.26
+       5470 |        208        0.05       71.31
+       5480 |        208        0.05       71.35
+       5490 |        316        0.07       71.42
+       5570 |        296        0.07       71.49
+       5580 |        584        0.13       71.62
+       5590 |         48        0.01       71.63
+       5592 |        100        0.02       71.66
+       5670 |         84        0.02       71.68
+       5680 |        176        0.04       71.72
+       5690 |        172        0.04       71.75
+       5790 |        216        0.05       71.80
+       6070 |        776        0.18       71.98
+       6080 |        408        0.09       72.07
+       6090 |         68        0.02       72.09
+       6170 |      2,152        0.49       72.57
+       6180 |        772        0.17       72.75
+       6190 |        192        0.04       72.79
+       6270 |         32        0.01       72.80
+       6280 |         48        0.01       72.81
+       6290 |        828        0.19       73.00
+       6370 |      1,340        0.30       73.30
+       6380 |        880        0.20       73.50
+       6390 |        352        0.08       73.58
+       6470 |        736        0.17       73.75
+       6480 |        420        0.10       73.84
+       6490 |         80        0.02       73.86
+       6570 |        436        0.10       73.96
+       6590 |         44        0.01       73.97
+       6670 |        660        0.15       74.12
+       6675 |          4        0.00       74.12
+       6680 |      1,408        0.32       74.44
+       6690 |        560        0.13       74.56
+       6692 |        112        0.03       74.59
+       6695 |         80        0.02       74.61
+       6770 |        316        0.07       74.68
+       6780 |         48        0.01       74.69
+       6870 |      2,700        0.61       75.30
+       6880 |        428        0.10       75.40
+       6890 |      1,536        0.35       75.74
+       6970 |      1,020        0.23       75.98
+       6990 |      3,304        0.75       76.72
+       7070 |      2,448        0.55       77.28
+       7080 |        272        0.06       77.34
+       7170 |        160        0.04       77.38
+       7180 |        120        0.03       77.40
+       7190 |        164        0.04       77.44
+       7270 |      1,672        0.38       77.82
+       7280 |      1,188        0.27       78.09
+       7290 |      1,808        0.41       78.50
+       7370 |        208        0.05       78.54
+       7380 |      2,032        0.46       79.00
+       7390 |        856        0.19       79.20
+       7460 |        724        0.16       79.36
+       7470 |        556        0.13       79.49
+       7480 |        300        0.07       79.55
+       7490 |        372        0.08       79.64
+       7570 |         60        0.01       79.65
+       7580 |      1,992        0.45       80.10
+       7590 |      1,100        0.25       80.35
+       7670 |        332        0.08       80.43
+       7680 |      1,056        0.24       80.67
+       7690 |      1,468        0.33       81.00
+       7770 |      1,072        0.24       81.24
+       7780 |        264        0.06       81.30
+       7790 |        580        0.13       81.43
+       7860 |     13,112        2.97       84.40
+       7870 |      5,040        1.14       85.54
+       7880 |        212        0.05       85.59
+       7890 |        428        0.10       85.68
+       7970 |      2,368        0.54       86.22
+       7980 |        832        0.19       86.41
+       7990 |        164        0.04       86.45
+       8070 |        132        0.03       86.48
+       8080 |        252        0.06       86.53
+       8090 |      1,168        0.26       86.80
+       8170 |      1,260        0.29       87.08
+       8180 |      1,488        0.34       87.42
+       8190 |      8,404        1.90       89.32
+       8270 |      3,236        0.73       90.05
+       8290 |      1,048        0.24       90.29
+       8370 |      1,628        0.37       90.66
+       8380 |        120        0.03       90.69
+       8390 |        420        0.10       90.78
+       8470 |      1,844        0.42       91.20
+       8560 |        536        0.12       91.32
+       8570 |        496        0.11       91.43
+       8580 |         96        0.02       91.45
+       8590 |      2,024        0.46       91.91
+       8660 |      2,216        0.50       92.41
+       8670 |         88        0.02       92.43
+       8680 |     11,780        2.67       95.10
+       8690 |        312        0.07       95.17
+       8770 |      1,468        0.33       95.50
+       8780 |        216        0.05       95.55
+       8790 |        164        0.04       95.59
+       8870 |        332        0.08       95.66
+       8880 |        168        0.04       95.70
+       8890 |          4        0.00       95.70
+       8970 |         32        0.01       95.71
+       8980 |        876        0.20       95.91
+       8990 |        200        0.05       95.95
+       9070 |        540        0.12       96.08
+       9080 |        208        0.05       96.12
+       9090 |        304        0.07       96.19
+       9160 |      1,616        0.37       96.56
+       9170 |      1,280        0.29       96.85
+       9180 |         60        0.01       96.86
+       9190 |        320        0.07       96.93
+       9290 |      1,012        0.23       97.16
+       9370 |      3,044        0.69       97.85
+       9380 |        548        0.12       97.97
+       9390 |        184        0.04       98.02
+       9470 |      3,740        0.85       98.86
+       9480 |      1,208        0.27       99.14
+       9490 |        408        0.09       99.23
+       9570 |        912        0.21       99.44
+       9590 |      1,620        0.37       99.80
+       9890 |        876        0.20      100.00
+------------+-----------------------------------
+      Total |    441,849      100.00
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD20218.000000"
+
+. set more off
+
+. global rootdir /Users/jonathanlatner/Desktop/SIPP
+
+. global output $rootdir/rawdata/sipp04
+
+. 
+. cd $output
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp04
+
+. 
+. use sipp04w1.dta, clear
+
+. 
+. foreach i of num 1/12 {         
+  2.         use sipp04w`i'.dta, clear
+  3. 
+.         
+.         /* This code will drop the first three months of each wave, thus
+>         generating a SIPP dataset by person-wave, rather than by person-month. */
+.         sort id wave srefmon
+  4.         egen seam_ = max(srefmon), by(id wave)
+  5.         sort id wave
+  6.         quietly by id wave: gen byte seam = seam_==srefmon
+  7.         label var seam "last month of wave"
+  8.         drop seam_
+  9.         keep if seam==1
+ 10.         
+.         keep if srefmon == 4
+ 11.         
+.         rename tage age
+ 12.         rename esex sex
+ 13.         rename tfipsst state
+ 14.         rename wpfinwgt weight /* person weight */
+ 15. 
+.         *Employment
+.         rename rmesr esr /* employment status */
+ 16.         rename epdjbthn paid_job /* paid job during reference period */
+ 17.         rename emoonlit moonlit /* moonlighting - income from additional work */
+ 18.         gen emp = 0 if esr>=1 & esr<=7
+ 19.         replace emp = 1 if esr>=1 & esr<=5
+ 20.         label var emp "Employed at least one week in a month"
+ 21.         label define emp 1 "Employed at least one week in a month" 0 "In LF, not employed all month"
+ 22. 
+.         gen temp_agency = 0 /* recode industry (ejbind), either first or second job */
+ 23.         replace temp_agency = 1 if ejbind1 == 7580 | ejbind2 == 7580
+ 24.         
+.         rename ecflag contingent /* LF: Flag indicating other-work-arrange */
+ 25. 
+.         gen temp_work = 0
+ 26.         replace temp_work = 1 if temp_agency == 1 | contingent == 1
+ 27. 
+.         *Education
+.         gen educ = 1 if eeduc<=38 &  eeduc~=.
+ 28.         replace educ = 2 if eeducate==39
+ 29.         replace educ = 3 if eeducate>=40 & eeducate<=43
+ 30.         replace educ = 4 if eeducate==44
+ 31.         replace educ = 5 if eeducate>=45 & eeducate<=48
+ 32.         drop eeducate
+ 33.         label define educ ///
+>         1 "less than high school" ///
+>         2 "high school grad" ///
+>         3 "some college" ///
+>         4 "college degree" ///
+>         5 "post-college"
+ 34.         label values educ educ
+ 35. 
+.         *Race/ethnicity
+.         rename erace race1
+ 36.         rename eorigin ethnic
+ 37.         gen race = 1 if race1==1 & (ethnic<20 | ethnic>28)
+ 38.         replace race = 2 if race1==2 & (ethnic<20 | ethnic>28)
+ 39.         replace race = 3 if (ethnic>=20 & ethnic<=28)
+ 40.         replace race = 4 if race1>2 & (ethnic<20 | ethnic>28) & race1~=.
+ 41. 
+.         label define race_cepr 1 "White" 2 "Black" 3 "Hispanic" 4 "Other"
+ 42.         label values race race_cepr
+ 43. 
+.         keep id wave srefmon ssuid epppnum state age sex educ emp contingent temp_agency weight paid_job moonlit temp_wor
+> k
+ 44.         
+.         sort id wave srefmon
+ 45.         save sipp04w`i'_small.dta, replace
+ 46. }
+(331,190 observations deleted)
+(0 observations deleted)
+(54,126 missing values generated)
+(53,622 real changes made)
+(584 real changes made)
+(1,195 real changes made)
+(68,347 missing values generated)
+(21,285 real changes made)
+(28,356 real changes made)
+(12,282 real changes made)
+(6,424 real changes made)
+(22,993 missing values generated)
+(14,354 real changes made)
+(0 real changes made)
+(8,639 real changes made)
+file sipp04w1_small.dta saved
+(308,261 observations deleted)
+(936 observations deleted)
+(50,343 missing values generated)
+(51,311 real changes made)
+(624 real changes made)
+(1,097 real changes made)
+(64,931 missing values generated)
+(20,937 real changes made)
+(26,354 real changes made)
+(11,599 real changes made)
+(6,041 real changes made)
+(21,254 missing values generated)
+(13,349 real changes made)
+(0 real changes made)
+(7,905 real changes made)
+file sipp04w2_small.dta saved
+(297,751 observations deleted)
+(1,263 observations deleted)
+(49,184 missing values generated)
+(48,700 real changes made)
+(564 real changes made)
+(946 real changes made)
+(62,688 missing values generated)
+(20,269 real changes made)
+(25,312 real changes made)
+(11,242 real changes made)
+(5,865 real changes made)
+(20,290 missing values generated)
+(12,744 real changes made)
+(0 real changes made)
+(7,546 real changes made)
+file sipp04w3_small.dta saved
+(292,575 observations deleted)
+(1,171 observations deleted)
+(48,818 missing values generated)
+(47,148 real changes made)
+(570 real changes made)
+(878 real changes made)
+(61,365 missing values generated)
+(19,829 real changes made)
+(24,781 real changes made)
+(11,006 real changes made)
+(5,749 real changes made)
+(19,836 missing values generated)
+(12,466 real changes made)
+(0 real changes made)
+(7,370 real changes made)
+file sipp04w4_small.dta saved
+(285,583 observations deleted)
+(1,339 observations deleted)
+(47,118 missing values generated)
+(46,845 real changes made)
+(562 real changes made)
+(915 real changes made)
+(60,699 missing values generated)
+(19,999 real changes made)
+(24,246 real changes made)
+(10,795 real changes made)
+(5,659 real changes made)
+(19,376 missing values generated)
+(12,102 real changes made)
+(0 real changes made)
+(7,274 real changes made)
+file sipp04w5_small.dta saved
+(281,754 observations deleted)
+(1,364 observations deleted)
+(46,996 missing values generated)
+(45,901 real changes made)
+(551 real changes made)
+(881 real changes made)
+(59,956 missing values generated)
+(19,662 real changes made)
+(24,074 real changes made)
+(10,629 real changes made)
+(5,591 real changes made)
+(19,121 missing values generated)
+(11,946 real changes made)
+(0 real changes made)
+(7,175 real changes made)
+file sipp04w6_small.dta saved
+(277,200 observations deleted)
+(1,282 observations deleted)
+(46,234 missing values generated)
+(44,936 real changes made)
+(530 real changes made)
+(854 real changes made)
+(58,900 missing values generated)
+(19,378 real changes made)
+(23,516 real changes made)
+(10,455 real changes made)
+(5,551 real changes made)
+(18,653 missing values generated)
+(11,714 real changes made)
+(0 real changes made)
+(6,939 real changes made)
+file sipp04w7_small.dta saved
+(273,801 observations deleted)
+(1,251 observations deleted)
+(44,969 missing values generated)
+(45,132 real changes made)
+(535 real changes made)
+(798 real changes made)
+(59,264 missing values generated)
+(19,827 real changes made)
+(23,312 real changes made)
+(10,543 real changes made)
+(5,582 real changes made)
+(18,242 missing values generated)
+(11,460 real changes made)
+(0 real changes made)
+(6,782 real changes made)
+file sipp04w8_small.dta saved
+(127,794 observations deleted)
+(540 observations deleted)
+(21,667 missing values generated)
+(20,470 real changes made)
+(231 real changes made)
+(348 real changes made)
+(27,298 missing values generated)
+(9,179 real changes made)
+(10,765 real changes made)
+(4,817 real changes made)
+(2,537 real changes made)
+(8,802 missing values generated)
+(5,465 real changes made)
+(0 real changes made)
+(3,337 real changes made)
+file sipp04w9_small.dta saved
+(124,764 observations deleted)
+(556 observations deleted)
+(21,228 missing values generated)
+(19,800 real changes made)
+(227 real changes made)
+(306 real changes made)
+(26,576 missing values generated)
+(8,861 real changes made)
+(10,548 real changes made)
+(4,677 real changes made)
+(2,490 real changes made)
+(8,467 missing values generated)
+(5,282 real changes made)
+(0 real changes made)
+(3,185 real changes made)
+file sipp04w10_small.dta saved
+(121,455 observations deleted)
+(481 observations deleted)
+(20,416 missing values generated)
+(19,606 real changes made)
+(217 real changes made)
+(320 real changes made)
+(26,391 missing values generated)
+(8,820 real changes made)
+(10,350 real changes made)
+(4,708 real changes made)
+(2,513 real changes made)
+(8,165 missing values generated)
+(5,075 real changes made)
+(0 real changes made)
+(3,090 real changes made)
+file sipp04w11_small.dta saved
+(122,204 observations deleted)
+(461 observations deleted)
+(20,745 missing values generated)
+(19,499 real changes made)
+(211 real changes made)
+(333 real changes made)
+(26,587 missing values generated)
+(8,853 real changes made)
+(10,466 real changes made)
+(4,744 real changes made)
+(2,524 real changes made)
+(8,199 missing values generated)
+(5,048 real changes made)
+(0 real changes made)
+(3,151 real changes made)
+file sipp04w12_small.dta saved
+
+. 
+. * Append
+. set more off
+
+. use sipp04w1_small.dta, clear
+
+. foreach i of num 2/12 {         
+  2.         append using sipp04w`i'_small.dta
+  3.         sort id wave srefmon
+  4. }
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+
+. 
+. * Merge in longitudinal panel weight
+. merge m:1 ssuid epppnum using sipp04lwt, keepusing(lgtpnwt*)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                         1,173
+        from master                         0  (_merge==1)
+        from using                      1,173  (_merge==2)
+
+    matched                           953,664  (_merge==3)
+    -----------------------------------------
+
+. keep if _m == 3
+(1,173 observations deleted)
+
+. 
+. egen pid = group(id)
+
+. drop id
+
+. rename pid id
+
+. 
+. order id wave srefmon
+
+. 
+. * Save
+. save sipp04_append.dta, replace
+file sipp04_append.dta saved
+
+. 
+. * Miscellaneous
+. use sipp04_append.dta, clear
+
+. 
+. keep if age >= 25 & age <= 54 
+(562,468 observations deleted)
+
+. keep if emp == 1
+(74,918 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0172792
+       2 |  .0183382
+       3 |  .0171599
+       4 |  .0158604
+       5 |  .0165945
+       6 |  .0165704
+       7 |   .016218
+       8 |   .015275
+       9 |  .0161499
+      10 |  .0143252
+      11 |  .0147172
+      12 |  .0152889
+---------+----------
+   Total |  .0164412
+--------------------
+
+. 
+. bys id: gen count = _n
+
+. bys id: gen max = _N
+
+. sum max
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+         max |    316,278    8.268542    2.963498          1         12
+
+. 
+. keep if max == `r(max)'
+(244,206 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0098235
+       2 |   .012987
+       3 |   .010323
+       4 |  .0088245
+       5 |  .0101565
+       6 |  .0121545
+       7 |   .009324
+       8 |   .008991
+       9 |   .008658
+      10 |   .008658
+      11 |   .008325
+      12 |   .010323
+---------+----------
+   Total |   .009879
+--------------------
+
+. 
+end of do-file
+
+. sum
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+          id |     72,072    63901.29    38351.13          1     131147
+        wave |     72,072         6.5    3.452076          1         12
+     srefmon |     72,072           4           0          4          4
+       ssuid |          0
+       state |     72,072    27.84058    16.00408          1         56
+-------------+---------------------------------------------------------
+     epppnum |          0
+         sex |     72,072    1.455517    .4980208          1          2
+      weight |     72,072    4914.665    3205.627    357.827   58469.25
+         age |     72,072    40.93179    7.275048         25         54
+    paid_job |     72,072           1           0          1          1
+-------------+---------------------------------------------------------
+     moonlit |     72,072     1.75623    .8019641         -1          2
+  contingent |     72,072    -.993673    .1123128         -1          1
+         emp |     72,072           1           0          1          1
+ temp_agency |     72,072    .0067433    .0818406          0          1
+   temp_work |     72,072     .009879    .0989017          0          1
+-------------+---------------------------------------------------------
+        educ |     72,072    3.081308    1.118101          1          5
+    lgtpnwt1 |     72,072    3784.573    1760.196          0   20959.68
+    lgtpnwt2 |     72,072    4559.859    2265.616          0    26149.8
+    lgtpnwt3 |     72,072    10376.51    4827.098          0   53650.24
+    lgtpnwt4 |     72,072     11286.3    5408.277          0   82185.01
+-------------+---------------------------------------------------------
+      _merge |     72,072           3           0          3          3
+       count |     72,072         6.5    3.452076          1         12
+         max |     72,072          12           0         12         12
+
+. tab contingent
+
+      LF: Flag |
+ indicating an |
+other-work-arr |
+      angement |      Freq.     Percent        Cum.
+---------------+-----------------------------------
+Not applicable |     71,844       99.68       99.68
+           Yes |        228        0.32      100.00
+---------------+-----------------------------------
+         Total |     72,072      100.00
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD20218.000000"
+
+. /* Please do not attemp to run this program without reading the accompanying documentation. */
+. 
+. version 8.0
+
+. set more off
+
+. prog drop _all
+
+. capture log close

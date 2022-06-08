@@ -1,0 +1,975 @@
+---------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/jonathanlatner/Desktop/SIPP/programs/sipp96/sipp1996ctl_fer.log
+  log type:  text
+ opened on:  22 Mar 2022, 08:30:45
+
+. 
+. **------------------------------------------------;
+. 
+. **  This program reads the 1996 SIPP Longitudnal Weight File Data File 
+. **  Note:  This program is distributed under the GNU GPL. See end of
+. **  this file and http://www.gnu.org/licenses/ for details.
+. **  by Jean Roth Wed Sep  3 15:54:37 EDT 2014
+. **  Please report errors to jroth@nber.org
+. **  run with do sipp1996ctl_fer
+. 
+. **-----------------------------------------------;
+. 
+. ** The following line should contain
+. **   the complete path and name of the raw data file.
+. **   On a PC, use backslashes in paths as in C:\  
+. 
+. local dat_name "/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp96/sipp96lw.dat"
+
+. 
+. ** The following line should contain the path to your output '.dta' file 
+. 
+. local dta_name "/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp96/sipp1996ctl_fer.dta"
+
+. 
+. ** The following line should contain the path to the data dictionary file 
+. 
+. local dct_name "/Users/jonathanlatner/Desktop/SIPP/programs/sipp96/sipp1996ctl_fer.dct"
+
+. 
+. ** The line below does NOT need to be changed 
+. 
+. quietly infile using "`dct_name'", using("`dat_name'") clear
+
+. 
+. **  Decimal places have been made explict in the dictionary file.
+. **  Stata resolves a missing value of -1 / # of decimal places as a missing value.
+. 
+. **Everything below this point, aside from the final save, are value labels
+. 
+. #delimit ;
+delimiter now ;
+. ;
+. label values spanel   spanel;
+
+.  label define spanel  
+>         1996        "Panel Year"                    
+> ;
+
+. #delimit cr
+delimiter now cr
+. desc,short
+
+Contains data
+  obs:       116,616                          
+ vars:             9                          
+ size:     7,696,656                          
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+. 
+. sort ssuid epppnum 
+
+. saveold `dta_name' , replace
+(saving in Stata 13 format)
+(FYI, saveold has options version(12) and version(11) that write files in older Stata formats)
+(note: file /Users/jonathanlatner/Desktop/SIPP/rawdata/sipp96/sipp1996ctl_fer.dta not found)
+file /Users/jonathanlatner/Desktop/SIPP/rawdata/sipp96/sipp1996ctl_fer.dta saved
+
+. 
+. 
+. 
+. ** Copyright 2014 shared by the National Bureau of Economic Research and Jean Roth ;
+. 
+. ** National Bureau of Economic Research. ;
+. ** 1050 Massachusetts Avenue ;
+. ** Cambridge, MA 02138 ;
+. ** jroth@nber.org ;
+. 
+. ** This program and all programs referenced in it are free software. You ;
+. ** can redistribute the program or modify it under the terms of the GNU ;
+. ** General Public License as published by the Free Software Foundation; 
+. ** either version 2 of the License, or (at your option) any later version. ;
+. 
+. ** This program is distributed in the hope that it will be useful, ;
+. ** but WITHOUT ANY WARRANTY, without even the implied warranty of ;
+. ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the ;
+. ** GNU General Public License for more details. ;
+. 
+. ** You should have received a copy of the GNU General Public License ;
+. ** along with this program, if not, write to the Free Software ;
+. ** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA. ;
+. 
+end of do-file
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp96
+(note: file sipp96lwt.dta not found)
+file sipp96lwt.dta saved
+
+. 
+end of do-file
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD02445.000000"
+
+. set more off
+
+. global rootdir /Users/jonathanlatner/Desktop/SIPP
+
+. global output $rootdir/rawdata/sipp96
+
+. 
+. cd $output
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp96
+
+. 
+. use sipp96l1.dta, clear
+
+. 
+. foreach i of num 1/12 {         
+  2.         use sipp96l`i'.dta, clear
+  3. 
+.         
+.         /* This code will drop the first three months of each wave, thus
+>         generating a SIPP dataset by person-wave, rather than by person-month. */
+.         sort id wave srefmon
+  4.         egen seam_ = max(srefmon), by(id wave)
+  5.         sort id wave
+  6.         quietly by id wave: gen byte seam = seam_==srefmon
+  7.         label var seam "last month of wave"
+  8.         drop seam_
+  9.         keep if seam==1
+ 10.         
+.         keep if srefmon == 4
+ 11.         
+.         rename tage age
+ 12.         rename esex sex
+ 13.         rename tfipsst state
+ 14.         rename wpfinwgt weight /* person weight */
+ 15. 
+.         *Employment
+.         rename rmesr esr /* employment status */
+ 16.         rename epdjbthn paid_job /* paid job during reference period */
+ 17.         rename emoonlit moonlit /* moonlighting - income from additional work */
+ 18.         gen emp = 0 if esr>=1 & esr<=7
+ 19.         replace emp = 1 if esr>=1 & esr<=5
+ 20.         label var emp "Employed at least one week in a month"
+ 21.         label define emp 1 "Employed at least one week in a month" 0 "In LF, not employed all month"
+ 22. 
+.         gen temp_agency = 0 /* recode industry (ejbind), either first or second job */
+ 23.         replace temp_agency = 1 if ejbind1 == 731 | ejbind2 == 731
+ 24.         
+.         rename ecflag contingent /* LF: Flag indicating other-work-arrange */
+ 25. 
+.         gen temp_work = 0
+ 26.         replace temp_work = 1 if temp_agency == 1 | contingent == 1 | moonlit == 1
+ 27. 
+.         *Education
+.         gen educ = 1 if eeducate<=38 & eeducate~=.
+ 28.         replace educ = 2 if eeducate==39
+ 29.         replace educ = 3 if eeducate>=40 & eeducate<=43
+ 30.         replace educ = 4 if eeducate==44
+ 31.         replace educ = 5 if eeducate>=45 & eeducate<=48
+ 32.         drop eeducate
+ 33.         label define educ ///
+>         1 "less than high school" ///
+>         2 "high school grad" ///
+>         3 "some college" ///
+>         4 "college degree" ///
+>         5 "post-college"
+ 34.         label values educ educ
+ 35. 
+.         *Race/ethnicity
+.         rename erace race1
+ 36.         rename eorigin ethnic
+ 37.         gen race = 1 if race1==1 & (ethnic<20 | ethnic>28)
+ 38.         replace race = 2 if race1==2 & (ethnic<20 | ethnic>28)
+ 39.         replace race = 3 if (ethnic>=20 & ethnic<=28)
+ 40.         replace race = 4 if race1>2 & (ethnic<20 | ethnic>28) & race1~=.
+ 41. 
+.         label define race_cepr 1 "White" 2 "Black" 3 "Hispanic" 4 "Other"
+ 42.         label values race race_cepr
+ 43. 
+.         keep id wave srefmon ssuid epppnum state age sex educ emp contingent temp_agency weight paid_job moonlit temp_wor
+> k
+ 44.         
+.         sort id wave srefmon
+ 45.         save sipp96l`i'_small.dta, replace
+ 46. }
+(285,294 observations deleted)
+(0 observations deleted)
+(47,010 missing values generated)
+(45,974 real changes made)
+(555 real changes made)
+(3,166 real changes made)
+(55,032 missing values generated)
+(21,963 real changes made)
+(19,384 real changes made)
+(9,234 real changes made)
+(4,451 real changes made)
+(27,846 missing values generated)
+(12,830 real changes made)
+(10,838 real changes made)
+(4,178 real changes made)
+(note: file sipp96l1_small.dta not found)
+file sipp96l1_small.dta saved
+(270,157 observations deleted)
+(817 observations deleted)
+(44,892 missing values generated)
+(44,416 real changes made)
+(610 real changes made)
+(2,253 real changes made)
+(52,821 missing values generated)
+(21,105 real changes made)
+(18,560 real changes made)
+(8,869 real changes made)
+(4,287 real changes made)
+(26,299 missing values generated)
+(12,011 real changes made)
+(10,298 real changes made)
+(3,990 real changes made)
+(note: file sipp96l2_small.dta not found)
+file sipp96l2_small.dta saved
+(264,116 observations deleted)
+(1,005 observations deleted)
+(44,306 missing values generated)
+(42,666 real changes made)
+(547 real changes made)
+(1,736 real changes made)
+(51,409 missing values generated)
+(20,461 real changes made)
+(18,059 real changes made)
+(8,707 real changes made)
+(4,182 real changes made)
+(25,487 missing values generated)
+(11,678 real changes made)
+(9,917 real changes made)
+(3,892 real changes made)
+(note: file sipp96l3_small.dta not found)
+file sipp96l3_small.dta saved
+(256,708 observations deleted)
+(973 observations deleted)
+(42,929 missing values generated)
+(41,548 real changes made)
+(535 real changes made)
+(1,496 real changes made)
+(50,086 missing values generated)
+(19,989 real changes made)
+(17,496 real changes made)
+(8,525 real changes made)
+(4,076 real changes made)
+(24,677 missing values generated)
+(11,270 real changes made)
+(9,622 real changes made)
+(3,785 real changes made)
+(note: file sipp96l4_small.dta not found)
+file sipp96l4_small.dta saved
+(246,753 observations deleted)
+(1,134 observations deleted)
+(41,054 missing values generated)
+(40,393 real changes made)
+(492 real changes made)
+(1,534 real changes made)
+(48,473 missing values generated)
+(19,291 real changes made)
+(16,869 real changes made)
+(8,305 real changes made)
+(4,008 real changes made)
+(23,562 missing values generated)
+(10,698 real changes made)
+(9,243 real changes made)
+(3,621 real changes made)
+(note: file sipp96l5_small.dta not found)
+file sipp96l5_small.dta saved
+(239,457 observations deleted)
+(914 observations deleted)
+(40,162 missing values generated)
+(38,733 real changes made)
+(452 real changes made)
+(1,331 real changes made)
+(46,864 missing values generated)
+(18,470 real changes made)
+(16,388 real changes made)
+(8,101 real changes made)
+(3,905 real changes made)
+(22,646 missing values generated)
+(10,246 real changes made)
+(8,911 real changes made)
+(3,489 real changes made)
+(note: file sipp96l6_small.dta not found)
+file sipp96l6_small.dta saved
+(232,857 observations deleted)
+(906 observations deleted)
+(38,950 missing values generated)
+(37,728 real changes made)
+(466 real changes made)
+(1,206 real changes made)
+(45,765 missing values generated)
+(18,065 real changes made)
+(15,898 real changes made)
+(7,948 real changes made)
+(3,854 real changes made)
+(21,974 missing values generated)
+(9,887 real changes made)
+(8,640 real changes made)
+(3,447 real changes made)
+(note: file sipp96l7_small.dta not found)
+file sipp96l7_small.dta saved
+(229,826 observations deleted)
+(1,073 observations deleted)
+(38,316 missing values generated)
+(37,497 real changes made)
+(449 real changes made)
+(1,286 real changes made)
+(45,585 missing values generated)
+(18,037 real changes made)
+(15,848 real changes made)
+(7,848 real changes made)
+(3,852 real changes made)
+(21,445 missing values generated)
+(9,641 real changes made)
+(8,470 real changes made)
+(3,334 real changes made)
+(note: file sipp96l8_small.dta not found)
+file sipp96l8_small.dta saved
+(225,657 observations deleted)
+(871 observations deleted)
+(37,697 missing values generated)
+(36,631 real changes made)
+(428 real changes made)
+(1,150 real changes made)
+(44,726 missing values generated)
+(17,495 real changes made)
+(15,611 real changes made)
+(7,799 real changes made)
+(3,821 real changes made)
+(20,913 missing values generated)
+(9,352 real changes made)
+(8,270 real changes made)
+(3,291 real changes made)
+(note: file sipp96l9_small.dta not found)
+file sipp96l9_small.dta saved
+(222,282 observations deleted)
+(860 observations deleted)
+(36,912 missing values generated)
+(36,363 real changes made)
+(398 real changes made)
+(1,050 real changes made)
+(44,309 missing values generated)
+(17,356 real changes made)
+(15,457 real changes made)
+(7,685 real changes made)
+(3,811 real changes made)
+(20,391 missing values generated)
+(9,003 real changes made)
+(8,196 real changes made)
+(3,192 real changes made)
+(note: file sipp96l10_small.dta not found)
+file sipp96l10_small.dta saved
+(219,191 observations deleted)
+(815 observations deleted)
+(36,282 missing values generated)
+(35,998 real changes made)
+(406 real changes made)
+(1,071 real changes made)
+(44,063 missing values generated)
+(17,290 real changes made)
+(15,285 real changes made)
+(7,679 real changes made)
+(3,809 real changes made)
+(19,963 missing values generated)
+(8,859 real changes made)
+(7,979 real changes made)
+(3,125 real changes made)
+(note: file sipp96l11_small.dta not found)
+file sipp96l11_small.dta saved
+(218,791 observations deleted)
+(735 observations deleted)
+(36,253 missing values generated)
+(35,987 real changes made)
+(397 real changes made)
+(1,035 real changes made)
+(44,033 missing values generated)
+(17,105 real changes made)
+(15,339 real changes made)
+(7,727 real changes made)
+(3,862 real changes made)
+(19,827 missing values generated)
+(8,853 real changes made)
+(7,841 real changes made)
+(3,133 real changes made)
+(note: file sipp96l12_small.dta not found)
+file sipp96l12_small.dta saved
+
+. 
+. * Append
+. set more off
+
+. use sipp96l1_small.dta, clear
+
+. foreach i of num 2/12 {         
+  2.         append using sipp96l`i'_small.dta
+  3.         sort id wave srefmon
+  4. }
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+(label educ already defined)
+(label srefmon already defined)
+(label tfipsst already defined)
+(label esex already defined)
+(label tage already defined)
+(label epdjbthn already defined)
+(label emoonlit already defined)
+(label ecflag already defined)
+
+. 
+. * Merge in longitudinal panel weight
+. merge m:1 ssuid epppnum using sipp96lwt, keepusing(lgtpnlwt)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                           903
+        from master                         0  (_merge==1)
+        from using                        903  (_merge==2)
+
+    matched                           975,985  (_merge==3)
+    -----------------------------------------
+
+. keep if _m == 3
+(903 observations deleted)
+
+. 
+. egen pid = group(id)
+
+. drop id
+
+. rename pid id
+
+. 
+. order id wave srefmon
+
+. 
+. * Save
+. save sipp96_append.dta, replace
+file sipp96_append.dta saved
+
+. 
+. * Miscellaneous
+. use sipp96_append.dta, clear
+
+. 
+. keep if age >= 25 & age <= 54 
+(558,344 observations deleted)
+
+. keep if emp != .
+(66,471 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0591627
+       2 |  .0415245
+       3 |  .0347831
+       4 |  .0306474
+       5 |  .0319789
+       6 |  .0294751
+       7 |  .0279625
+       8 |  .0280727
+       9 |  .0273983
+      10 |  .0250075
+      11 |  .0248205
+      12 |  .0246829
+---------+----------
+   Total |  .0329128
+--------------------
+
+. 
+. bys id: gen count = _n
+
+. bys id: gen max = _N
+
+. 
+. keep if max == 12
+(174,362 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0576897
+       2 |  .0359712
+       3 |  .0316275
+       4 |  .0266051
+       5 |  .0274874
+       6 |  .0241618
+       7 |  .0203611
+       8 |  .0217185
+       9 |  .0213791
+      10 |  .0188001
+      11 |  .0192073
+      12 |  .0188679
+---------+----------
+   Total |  .0269897
+--------------------
+
+. 
+end of do-file
+
+. help tabstat
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD02445.000000"
+
+. tabstat temp_work [aweight=weight], by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0582528
+       2 |  .0359977
+       3 |    .03179
+       4 |  .0265009
+       5 |  .0274623
+       6 |  .0240349
+       7 |  .0202012
+       8 |  .0222235
+       9 |  .0214914
+      10 |   .018175
+      11 |  .0188451
+      12 |  .0191391
+---------+----------
+   Total |  .0260578
+--------------------
+
+. 
+end of do-file
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD02445.000000"
+
+. tabstat temp_agency, by(wave)
+
+Summary for variables: temp_agency
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0071942
+       2 |  .0079408
+       3 |  .0090946
+       4 |  .0090267
+       5 |  .0074657
+       6 |  .0069228
+       7 |  .0065155
+       8 |  .0066513
+       9 |  .0067192
+      10 |  .0067192
+      11 |  .0061762
+      12 |  .0060405
+---------+----------
+   Total |  .0072056
+--------------------
+
+. 
+end of do-file
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD02445.000000"
+
+. tabstat contingent, by(wave)
+
+Summary for variables: contingent
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 | -.9899552
+       2 | -.9820823
+       3 | -.9849328
+       4 | -.9894122
+       5 | -.9888693
+       6 | -.9904982
+       7 | -.9923985
+       8 | -.9909054
+       9 | -.9910411
+      10 | -.9941632
+      11 |   -.99267
+      12 | -.9936202
+---------+----------
+   Total | -.9900457
+--------------------
+
+. 
+end of do-file
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD02445.000000"
+
+. tab contingent wave
+
+       LF: Flag |
+     indicating |
+other-work-arra |                               SU: Wave of data collection
+            nge |         1          2          3          4          5          6          7          8 |     Total
+----------------+----------------------------------------------------------------------------------------+----------
+Not in universe |    14,660     14,602     14,623     14,656     14,652     14,664     14,678     14,667 |   175,928 
+            Yes |        74        132        111         78         82         70         56         67 |       880 
+----------------+----------------------------------------------------------------------------------------+----------
+          Total |    14,734     14,734     14,734     14,734     14,734     14,734     14,734     14,734 |   176,808 
+
+
+       LF: Flag |
+     indicating |
+other-work-arra |         SU: Wave of data collection
+            nge |         9         10         11         12 |     Total
+----------------+--------------------------------------------+----------
+Not in universe |    14,668     14,691     14,680     14,687 |   175,928 
+            Yes |        66         43         54         47 |       880 
+----------------+--------------------------------------------+----------
+          Total |    14,734     14,734     14,734     14,734 |   176,808 
+
+
+. 
+end of do-file
+
+. tab wave contingent
+
+  SU: Wave |  LF: Flag indicating
+   of data |  other-work-arrange
+collection | Not in un        Yes |     Total
+-----------+----------------------+----------
+         1 |    14,660         74 |    14,734 
+         2 |    14,602        132 |    14,734 
+         3 |    14,623        111 |    14,734 
+         4 |    14,656         78 |    14,734 
+         5 |    14,652         82 |    14,734 
+         6 |    14,664         70 |    14,734 
+         7 |    14,678         56 |    14,734 
+         8 |    14,667         67 |    14,734 
+         9 |    14,668         66 |    14,734 
+        10 |    14,691         43 |    14,734 
+        11 |    14,680         54 |    14,734 
+        12 |    14,687         47 |    14,734 
+-----------+----------------------+----------
+     Total |   175,928        880 |   176,808 
+
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD02445.000000"
+
+. set more off
+
+. global rootdir /Users/jonathanlatner/Desktop/SIPP
+
+. global output $rootdir/rawdata/sipp96
+
+. 
+. cd $output
+/Users/jonathanlatner/Desktop/SIPP/rawdata/sipp96
+
+. 
+. use sipp96l1.dta, clear
+
+. 
+. foreach i of num 1/12 {         
+  2.         use sipp96l`i'.dta, clear
+  3. 
+.         
+.         /* This code will drop the first three months of each wave, thus
+>         generating a SIPP dataset by person-wave, rather than by person-month. */
+.         sort id wave srefmon
+  4.         egen seam_ = max(srefmon), by(id wave)
+  5.         sort id wave
+  6.         quietly by id wave: gen byte seam = seam_==srefmon
+  7.         label var seam "last month of wave"
+  8.         drop seam_
+  9.         keep if seam==1
+ 10.         
+.         keep if srefmon == 4
+ 11.         
+.         rename tage age
+ 12.         rename esex sex
+ 13.         rename tfipsst state
+ 14.         rename wpfinwgt weight /* person weight */
+ 15. 
+.         *Employment
+.         rename rmesr esr /* employment status */
+ 16.         rename epdjbthn paid_job /* paid job during reference period */
+ 17.         rename emoonlit moonlit /* moonlighting - income from additional work */
+ 18.         gen emp = 0 if esr>=1 & esr<=7
+ 19.         replace emp = 1 if esr>=1 & esr<=5
+ 20.         label var emp "Employed at least one week in a month"
+ 21.         label define emp 1 "Employed at least one week in a month" 0 "In LF, not employed all month"
+ 22. 
+.         gen temp_agency = 0 /* recode industry (ejbind), either first or second job */
+ 23.         replace temp_agency = 1 if ejbind1 == 731 | ejbind2 == 731
+ 24.         
+.         rename ecflag contingent /* LF: Flag indicating other-work-arrange */
+ 25. 
+.         gen temp_work = 0
+ 26.         replace temp_work = 1 if temp_agency == 1 | contingent == 1 | moonlit == 1
+ 27. 
+.         *Education
+.         gen educ = 1 if eeducate<=38 & eeducate~=.
+ 28.         replace educ = 2 if eeducate==39
+ 29.         replace educ = 3 if eeducate>=40 & eeducate<=43
+ 30.         replace educ = 4 if eeducate==44
+ 31.         replace educ = 5 if eeducate>=45 & eeducate<=48
+ 32.         drop eeducate
+ 33.         label define educ ///
+>         1 "less than high school" ///
+>         2 "high school grad" ///
+>         3 "some college" ///
+>         4 "college degree" ///
+>         5 "post-college"
+ 34.         label values educ educ
+ 35. 
+.         *Race/ethnicity
+.         rename erace race1
+ 36.         rename eorigin ethnic
+ 37.         gen race = 1 if race1==1 & (ethnic<20 | ethnic>28)
+ 38.         replace race = 2 if race1==2 & (ethnic<20 | ethnic>28)
+ 39.         replace race = 3 if (ethnic>=20 & ethnic<=28)
+ 40.         replace race = 4 if race1>2 & (ethnic<20 | ethnic>28) & race1~=.
+ 41. 
+.         label define race_cepr 1 "White" 2 "Black" 3 "Hispanic" 4 "Other"
+ 42.         label values race race_cepr
+ 43. 
+.         keep id wave srefmon ssuid epppnum state age sex educ emp contingent temp_agency weight paid_job moonlit temp_wor
+> k
+ 44.         
+.         sort id wave srefmon
+ 45.         save sipp96l`i'_small.dta, replace
+ 46. }
+(285,294 observations deleted)
+(0 observations deleted)
+--Break--
+r(1);
+
+end of do-file
+
+--Break--
+r(1);
+
+. do "/var/folders/r7/vhjmnjxd251_0g36ws5061yc0000gn/T//SD02445.000000"
+
+. 
+. * Miscellaneous
+. use sipp96_append.dta, clear
+
+. 
+. keep if age >= 25 & age <= 54 
+(558,344 observations deleted)
+
+. keep if emp != .
+(66,471 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0591627
+       2 |  .0415245
+       3 |  .0347831
+       4 |  .0306474
+       5 |  .0319789
+       6 |  .0294751
+       7 |  .0279625
+       8 |  .0280727
+       9 |  .0273983
+      10 |  .0250075
+      11 |  .0248205
+      12 |  .0246829
+---------+----------
+   Total |  .0329128
+--------------------
+
+. 
+. bys id: gen count = _n
+
+. bys id: gen max = _N
+
+. 
+. keep if max == 12
+(174,362 observations deleted)
+
+. 
+. tabstat temp_work, by(wave)
+
+Summary for variables: temp_work
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0576897
+       2 |  .0359712
+       3 |  .0316275
+       4 |  .0266051
+       5 |  .0274874
+       6 |  .0241618
+       7 |  .0203611
+       8 |  .0217185
+       9 |  .0213791
+      10 |  .0188001
+      11 |  .0192073
+      12 |  .0188679
+---------+----------
+   Total |  .0269897
+--------------------
+
+. 
+. tabstat temp_agency, by(wave)
+
+Summary for variables: temp_agency
+     by categories of: wave (SU: Wave of data collection)
+
+    wave |      mean
+---------+----------
+       1 |  .0071942
+       2 |  .0079408
+       3 |  .0090946
+       4 |  .0090267
+       5 |  .0074657
+       6 |  .0069228
+       7 |  .0065155
+       8 |  .0066513
+       9 |  .0067192
+      10 |  .0067192
+      11 |  .0061762
+      12 |  .0060405
+---------+----------
+   Total |  .0072056
+--------------------
+
+. 
+. tab wave contingent
+
+  SU: Wave |  LF: Flag indicating
+   of data |  other-work-arrange
+collection | Not in un        Yes |     Total
+-----------+----------------------+----------
+         1 |    14,660         74 |    14,734 
+         2 |    14,602        132 |    14,734 
+         3 |    14,623        111 |    14,734 
+         4 |    14,656         78 |    14,734 
+         5 |    14,652         82 |    14,734 
+         6 |    14,664         70 |    14,734 
+         7 |    14,678         56 |    14,734 
+         8 |    14,667         67 |    14,734 
+         9 |    14,668         66 |    14,734 
+        10 |    14,691         43 |    14,734 
+        11 |    14,680         54 |    14,734 
+        12 |    14,687         47 |    14,734 
+-----------+----------------------+----------
+     Total |   175,928        880 |   176,808 
+
+
+. 
+. tab wave moonlit
+
+  SU: Wave |
+   of data | LF: Income from additional work
+collection | Not in un        Yes         No |     Total
+-----------+---------------------------------+----------
+         1 |     1,470        676     12,588 |    14,734 
+         2 |     1,793        288     12,653 |    14,734 
+         3 |     1,753        227     12,754 |    14,734 
+         4 |     1,684        188     12,862 |    14,734 
+         5 |     1,663        217     12,854 |    14,734 
+         6 |     1,585        189     12,960 |    14,734 
+         7 |     1,508        151     13,075 |    14,734 
+         8 |     1,545        158     13,031 |    14,734 
+         9 |     1,467        154     13,113 |    14,734 
+        10 |     1,485        138     13,111 |    14,734 
+        11 |     1,513        139     13,082 |    14,734 
+        12 |     1,464        146     13,124 |    14,734 
+-----------+---------------------------------+----------
+     Total |    18,930      2,671    155,207 |   176,808 
+
+
+. 
+end of do-file
+
+. exit, clear
